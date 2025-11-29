@@ -14,6 +14,7 @@ type mockAWSClient struct {
 	routeTables         map[string]*domain.RouteTableData
 	vpcs                map[string]*domain.VPCData
 	igws                map[string]*domain.InternetGatewayData
+	eigws               map[string]*domain.EgressOnlyInternetGatewayData
 	natGateways         map[string]*domain.NATGatewayData
 	vpcEndpoints        map[string]*domain.VPCEndpointData
 	vpcPeerings         map[string]*domain.VPCPeeringData
@@ -48,6 +49,7 @@ func newMockAWSClient() *mockAWSClient {
 		routeTables:         make(map[string]*domain.RouteTableData),
 		vpcs:                make(map[string]*domain.VPCData),
 		igws:                make(map[string]*domain.InternetGatewayData),
+		eigws:               make(map[string]*domain.EgressOnlyInternetGatewayData),
 		natGateways:         make(map[string]*domain.NATGatewayData),
 		vpcEndpoints:        make(map[string]*domain.VPCEndpointData),
 		vpcPeerings:         make(map[string]*domain.VPCPeeringData),
@@ -115,6 +117,13 @@ func (m *mockAWSClient) GetInternetGateway(ctx context.Context, igwID string) (*
 		return igw, nil
 	}
 	return nil, fmt.Errorf("internet gateway %s not found", igwID)
+}
+
+func (m *mockAWSClient) GetEgressOnlyInternetGateway(ctx context.Context, eigwID string) (*domain.EgressOnlyInternetGatewayData, error) {
+	if eigw, ok := m.eigws[eigwID]; ok {
+		return eigw, nil
+	}
+	return nil, fmt.Errorf("egress-only internet gateway %s not found", eigwID)
 }
 
 func (m *mockAWSClient) GetNATGateway(ctx context.Context, natID string) (*domain.NATGatewayData, error) {

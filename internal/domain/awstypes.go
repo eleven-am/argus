@@ -146,6 +146,11 @@ type InternetGatewayData struct {
 	VPCID string
 }
 
+type EgressOnlyInternetGatewayData struct {
+	ID    string
+	VPCID string
+}
+
 type NATGatewayData struct {
 	ID       string
 	SubnetID string

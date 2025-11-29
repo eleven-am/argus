@@ -289,6 +289,17 @@ func toInternetGatewayData(igw *ec2types.InternetGateway) *domain.InternetGatewa
 	}
 }
 
+func toEgressOnlyInternetGatewayData(eigw *ec2types.EgressOnlyInternetGateway) *domain.EgressOnlyInternetGatewayData {
+	var vpcID string
+	if len(eigw.Attachments) > 0 {
+		vpcID = derefString(eigw.Attachments[0].VpcId)
+	}
+	return &domain.EgressOnlyInternetGatewayData{
+		ID:    derefString(eigw.EgressOnlyInternetGatewayId),
+		VPCID: vpcID,
+	}
+}
+
 func toNATGatewayData(nat *ec2types.NatGateway) *domain.NATGatewayData {
 	var publicIP string
 	for _, addr := range nat.NatGatewayAddresses {

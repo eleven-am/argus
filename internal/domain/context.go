@@ -24,6 +24,7 @@ type AWSClient interface {
 	GetRouteTable(ctx context.Context, rtID string) (*RouteTableData, error)
 	GetVPC(ctx context.Context, vpcID string) (*VPCData, error)
 	GetInternetGateway(ctx context.Context, igwID string) (*InternetGatewayData, error)
+	GetEgressOnlyInternetGateway(ctx context.Context, eigwID string) (*EgressOnlyInternetGatewayData, error)
 	GetNATGateway(ctx context.Context, natID string) (*NATGatewayData, error)
 	GetVPCEndpoint(ctx context.Context, endpointID string) (*VPCEndpointData, error)
 	GetVPCPeering(ctx context.Context, peeringID string) (*VPCPeeringData, error)
