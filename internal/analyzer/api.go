@@ -12,6 +12,6 @@ import (
 
 func TestReachabilityDefault(ctx context.Context, source, destination domain.Component, awsCfg aws.Config, roleARNPattern string) domain.ReachabilityResult {
 	accountCtx := awspkg.NewAccountContext(awsCfg, roleARNPattern)
-	resolver := resolverpkg.NewSimpleResolver(accountCtx)
+	resolver := resolverpkg.NewResolver(accountCtx)
 	return TestReachabilityWithResolver(ctx, source, destination, accountCtx, resolver)
 }

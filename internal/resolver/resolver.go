@@ -7,21 +7,21 @@ import (
 	"github.com/eleven-am/argus/internal/domain"
 )
 
-type SimpleResolver struct {
+type Resolver struct {
 	accountCtx domain.AccountContext
 	cacheIP    map[string]domain.Component
 	cacheID    map[string]domain.Component
 }
 
-func NewSimpleResolver(accountCtx domain.AccountContext) *SimpleResolver {
-	return &SimpleResolver{
+func NewResolver(accountCtx domain.AccountContext) *Resolver {
+	return &Resolver{
 		accountCtx: accountCtx,
 		cacheIP:    make(map[string]domain.Component),
 		cacheID:    make(map[string]domain.Component),
 	}
 }
 
-func (r *SimpleResolver) ResolveByIP(ctx context.Context, accountID, vpcID, ip string) (domain.Component, error) {
+func (r *Resolver) ResolveByIP(ctx context.Context, accountID, vpcID, ip string) (domain.Component, error) {
 	if ip == "" {
 		return nil, nil
 	}
@@ -96,7 +96,7 @@ func (r *SimpleResolver) ResolveByIP(ctx context.Context, accountID, vpcID, ip s
 	return nil, nil
 }
 
-func (r *SimpleResolver) ResolveByID(ctx context.Context, id string) (domain.Component, error) {
+func (r *Resolver) ResolveByID(ctx context.Context, id string) (domain.Component, error) {
 	if id == "" {
 		return nil, nil
 	}

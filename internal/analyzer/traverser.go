@@ -15,7 +15,7 @@ func TestReachability(ctx context.Context, source, destination domain.Component,
 
 func TestReachabilityWithResolver(ctx context.Context, source, destination domain.Component, accountCtx domain.AccountContext, resolver domain.DestinationResolver) domain.ReachabilityResult {
 	if resolver == nil && accountCtx != nil {
-		resolver = resolverpkg.NewSimpleResolver(accountCtx)
+		resolver = resolverpkg.NewResolver(accountCtx)
 	}
 
 	destTarget := destination.GetRoutingTarget()
