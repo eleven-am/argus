@@ -36,7 +36,7 @@ import (
     "log"
 
     "github.com/aws/aws-sdk-go-v2/config"
-    "github.com/eleven-am/argus/pkg/argus"
+    "github.com/eleven-am/argus"
 )
 
 func main() {
