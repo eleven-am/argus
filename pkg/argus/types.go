@@ -32,6 +32,8 @@ const (
 
 type HopLineage = domain.HopLineage
 
+type AllPathsResult = domain.AllPathsResult
+
 type resourceType int
 
 const (

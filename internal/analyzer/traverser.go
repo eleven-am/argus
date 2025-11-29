@@ -392,3 +392,127 @@ type accountContextWithResolver struct {
 func (a *accountContextWithResolver) GetResolver() domain.DestinationResolver {
 	return a.resolver
 }
+
+func TestReachabilityAllPaths(ctx context.Context, source, destination domain.Component, accountCtx domain.AccountContext) domain.AllPathsResult {
+	return TestReachabilityAllPathsWithResolver(ctx, source, destination, accountCtx, nil)
+}
+
+func TestReachabilityAllPathsWithResolver(ctx context.Context, source, destination domain.Component, accountCtx domain.AccountContext, resolver domain.DestinationResolver) domain.AllPathsResult {
+	if resolver == nil && accountCtx != nil {
+		resolver = resolverpkg.NewResolver(accountCtx)
+	}
+
+	destTarget := destination.GetRoutingTarget()
+	destTarget.Direction = "outbound"
+	destTarget.SourceIsPrivate = isPrivateIPStr(source.GetRoutingTarget().IP)
+	sourceTarget := source.GetRoutingTarget()
+	sourceTarget.Direction = "inbound"
+	sourceTarget.SourceIsPrivate = isPrivateIPStr(destTarget.IP)
+
+	ctxWithResolver := &accountContextWithResolver{
+		AccountContext: accountCtx,
+		resolver:       resolver,
+	}
+
+	sourceAnalyzer := NewAnalyzerContext(ctx, ctxWithResolver)
+	forwardPaths := TraverseAllPaths(source, destTarget, destination.GetID(), sourceAnalyzer, resolver, domain.HopLineage{})
+
+	destAnalyzer := NewAnalyzerContext(ctx, ctxWithResolver)
+	returnPaths := TraverseAllPaths(destination, sourceTarget, source.GetID(), destAnalyzer, resolver, domain.HopLineage{})
+
+	successfulForward := 0
+	for _, p := range forwardPaths {
+		if p.Success {
+			successfulForward++
+		}
+	}
+
+	successfulReturn := 0
+	for _, p := range returnPaths {
+		if p.Success {
+			successfulReturn++
+		}
+	}
+
+	return domain.AllPathsResult{
+		ForwardPaths:           forwardPaths,
+		ReturnPaths:            returnPaths,
+		SuccessfulForwardPaths: successfulForward,
+		SuccessfulReturnPaths:  successfulReturn,
+		HasReachablePath:       successfulForward > 0 && successfulReturn > 0,
+	}
+}
+
+func TraverseAllPaths(current domain.Component, destination domain.RoutingTarget, destinationID string, analyzerCtx domain.AnalyzerContext, resolver domain.DestinationResolver, lineage domain.HopLineage) []*domain.PathTrace {
+	trace := domain.NewPathTrace()
+	return traverseAllPathsRecursive(current, destination, destinationID, analyzerCtx, resolver, trace, lineage, make(map[string]bool))
+}
+
+func traverseAllPathsRecursive(current domain.Component, destination domain.RoutingTarget, destinationID string, analyzerCtx domain.AnalyzerContext, resolver domain.DestinationResolver, trace *domain.PathTrace, lineage domain.HopLineage, visited map[string]bool) []*domain.PathTrace {
+	if visited[current.GetID()] {
+		return nil
+	}
+	visited[current.GetID()] = true
+	defer func() { visited[current.GetID()] = false }()
+
+	action := inferHopAction(current)
+	hop := domain.HopFromComponent(current, lineage, action, "")
+	trace.AddHop(hop)
+
+	nextHops, err := current.GetNextHops(destination, analyzerCtx)
+	if err != nil {
+		blockedTrace := trace.Clone()
+		blockedTrace.MarkBlocked(err.Error())
+		return []*domain.PathTrace{blockedTrace}
+	}
+
+	if IsDestinationReached(nextHops, destination, destinationID) {
+		successTrace := trace.Clone()
+		successTrace.LastHop().Action = domain.HopActionTerminal
+		successTrace.LastHop().Details = "destination reached"
+		successTrace.MarkSuccess()
+		return []*domain.PathTrace{successTrace}
+	}
+
+	var unvisitedHops []domain.Component
+	for _, hop := range nextHops {
+		if !visited[hop.GetID()] {
+			unvisitedHops = append(unvisitedHops, hop)
+		}
+	}
+
+	if len(unvisitedHops) == 0 {
+		if isTerminalComponent(current) && isExternalDestination(destination.IP) {
+			successTrace := trace.Clone()
+			successTrace.LastHop().Action = domain.HopActionTerminal
+			successTrace.LastHop().Details = "external destination via terminal"
+			successTrace.MarkSuccess()
+			return []*domain.PathTrace{successTrace}
+		}
+		if isFilterComponent(current) {
+			successTrace := trace.Clone()
+			successTrace.LastHop().Details = "filter passed"
+			successTrace.MarkSuccess()
+			return []*domain.PathTrace{successTrace}
+		}
+		blockedTrace := trace.Clone()
+		blockedTrace.MarkBlocked("no route to destination")
+		return []*domain.PathTrace{blockedTrace}
+	}
+
+	var allPaths []*domain.PathTrace
+	for _, nextHop := range unvisitedHops {
+		nextLineage := inferLineage(current, nextHop)
+		branchTrace := trace.Clone()
+		branchPaths := traverseAllPathsRecursive(nextHop, destination, destinationID, analyzerCtx, resolver, branchTrace, nextLineage, visited)
+		allPaths = append(allPaths, branchPaths...)
+	}
+
+	if len(allPaths) == 0 {
+		blockedTrace := trace.Clone()
+		blockedTrace.MarkBlocked("all paths blocked")
+		return []*domain.PathTrace{blockedTrace}
+	}
+
+	return allPaths
+}

@@ -35,3 +35,22 @@ func TestReachability(ctx context.Context, source, dest ResourceRef, accountCtx 
 	result := analyzer.TestReachability(ctx, sourceComponent, destComponent, accountCtx)
 	return result, nil
 }
+
+// TestReachabilityAllPaths finds all possible network paths between two AWS resources.
+// Unlike TestReachability which stops at the first successful path, this explores all routes.
+// Useful for understanding redundant paths, identifying all blocking points, or auditing.
+// Returns AllPathsResult with forward and return paths, including success/failure counts.
+func TestReachabilityAllPaths(ctx context.Context, source, dest ResourceRef, accountCtx *AccountContext) (AllPathsResult, error) {
+	sourceComponent, err := source.resolve(ctx, accountCtx)
+	if err != nil {
+		return AllPathsResult{}, fmt.Errorf("resolve source: %w", err)
+	}
+
+	destComponent, err := dest.resolve(ctx, accountCtx)
+	if err != nil {
+		return AllPathsResult{}, fmt.Errorf("resolve destination: %w", err)
+	}
+
+	result := analyzer.TestReachabilityAllPaths(ctx, sourceComponent, destComponent, accountCtx)
+	return result, nil
+}

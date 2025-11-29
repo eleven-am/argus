@@ -47,3 +47,31 @@ func CombineResultsWithTrace(srcToDest, destToSrc PathResult, forwardTrace, retu
 		ReturnPath:          returnTrace,
 	}
 }
+
+type AllPathsResult struct {
+	ForwardPaths           []*PathTrace
+	ReturnPaths            []*PathTrace
+	SuccessfulForwardPaths int
+	SuccessfulReturnPaths  int
+	HasReachablePath       bool
+}
+
+func (r *AllPathsResult) GetSuccessfulPaths() []*PathTrace {
+	var successful []*PathTrace
+	for _, p := range r.ForwardPaths {
+		if p.Success {
+			successful = append(successful, p)
+		}
+	}
+	return successful
+}
+
+func (r *AllPathsResult) GetBlockedPaths() []*PathTrace {
+	var blocked []*PathTrace
+	for _, p := range r.ForwardPaths {
+		if !p.Success {
+			blocked = append(blocked, p)
+		}
+	}
+	return blocked
+}
