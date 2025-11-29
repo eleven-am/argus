@@ -26,6 +26,8 @@ type ReachabilityResult struct {
 	SourceToDestination PathResult
 	DestinationToSource PathResult
 	OverallSuccess      bool
+	ForwardPath         *PathTrace
+	ReturnPath          *PathTrace
 }
 
 func CombineResults(srcToDest, destToSrc PathResult) ReachabilityResult {
@@ -33,5 +35,15 @@ func CombineResults(srcToDest, destToSrc PathResult) ReachabilityResult {
 		SourceToDestination: srcToDest,
 		DestinationToSource: destToSrc,
 		OverallSuccess:      !srcToDest.IsBlocked() && !destToSrc.IsBlocked(),
+	}
+}
+
+func CombineResultsWithTrace(srcToDest, destToSrc PathResult, forwardTrace, returnTrace *PathTrace) ReachabilityResult {
+	return ReachabilityResult{
+		SourceToDestination: srcToDest,
+		DestinationToSource: destToSrc,
+		OverallSuccess:      !srcToDest.IsBlocked() && !destToSrc.IsBlocked(),
+		ForwardPath:         forwardTrace,
+		ReturnPath:          returnTrace,
 	}
 }

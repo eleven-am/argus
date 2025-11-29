@@ -56,3 +56,7 @@ func (gwlb *GWLB) GetID() string {
 func (gwlb *GWLB) GetAccountID() string {
 	return gwlb.accountID
 }
+
+func (gwlb *GWLB) GetComponentType() string {
+	return "GWLB"
+}

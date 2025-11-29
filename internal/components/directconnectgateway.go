@@ -67,3 +67,7 @@ func (dxgw *DirectConnectGateway) GetAccountID() string {
 func (dxgw *DirectConnectGateway) IsTerminal() bool {
 	return true
 }
+
+func (dxgw *DirectConnectGateway) GetComponentType() string {
+	return "DirectConnectGateway"
+}

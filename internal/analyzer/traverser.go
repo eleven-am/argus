@@ -31,12 +31,14 @@ func TestReachabilityWithResolver(ctx context.Context, source, destination domai
 	}
 
 	sourceAnalyzer := NewAnalyzerContext(ctx, ctxWithResolver)
-	sourceResult := TraversePath(source, destTarget, destination.GetID(), sourceAnalyzer, resolver)
+	forwardTrace := domain.NewPathTrace()
+	sourceResult := TraversePathWithTrace(source, destTarget, destination.GetID(), sourceAnalyzer, resolver, forwardTrace, domain.HopLineage{})
 
 	destAnalyzer := NewAnalyzerContext(ctx, ctxWithResolver)
-	destResult := TraversePath(destination, sourceTarget, source.GetID(), destAnalyzer, resolver)
+	returnTrace := domain.NewPathTrace()
+	destResult := TraversePathWithTrace(destination, sourceTarget, source.GetID(), destAnalyzer, resolver, returnTrace, domain.HopLineage{})
 
-	return domain.CombineResults(sourceResult, destResult)
+	return domain.CombineResultsWithTrace(sourceResult, destResult, forwardTrace, returnTrace)
 }
 
 func TraversePath(current domain.Component, destination domain.RoutingTarget, destinationID string, analyzerCtx domain.AnalyzerContext, resolver domain.DestinationResolver) domain.PathResult {
@@ -86,6 +88,189 @@ func TraversePath(current domain.Component, destination domain.RoutingTarget, de
 		BlockingComponent: current,
 		Reason:            errors.New("all paths blocked"),
 	}
+}
+
+func TraversePathWithTrace(current domain.Component, destination domain.RoutingTarget, destinationID string, analyzerCtx domain.AnalyzerContext, resolver domain.DestinationResolver, trace *domain.PathTrace, lineage domain.HopLineage) domain.PathResult {
+	analyzerCtx.MarkVisited(current)
+
+	action := inferHopAction(current)
+	hop := domain.HopFromComponent(current, lineage, action, "")
+	trace.AddHop(hop)
+
+	nextHops, err := current.GetNextHops(destination, analyzerCtx)
+	if err != nil {
+		hop.Action = domain.HopActionBlocked
+		hop.Details = err.Error()
+		trace.BlockedAt = hop
+		trace.Success = false
+		return domain.BlockedResult{
+			BlockingComponent: current,
+			Reason:            err,
+		}
+	}
+
+	filteredHops := filterVisited(nextHops, analyzerCtx)
+
+	if IsDestinationReached(filteredHops, destination, destinationID) {
+		hop.Action = domain.HopActionTerminal
+		hop.Details = "destination reached"
+		trace.MarkSuccess()
+		return domain.SuccessResult{}
+	}
+
+	if len(filteredHops) == 0 {
+		if isTerminalComponent(current) && isExternalDestination(destination.IP) {
+			hop.Action = domain.HopActionTerminal
+			hop.Details = "external destination via terminal"
+			trace.MarkSuccess()
+			return domain.SuccessResult{}
+		}
+		if isFilterComponent(current) {
+			hop.Details = "filter passed"
+			trace.MarkSuccess()
+			return domain.SuccessResult{}
+		}
+		hop.Action = domain.HopActionBlocked
+		hop.Details = "no route to destination"
+		trace.BlockedAt = hop
+		trace.Success = false
+		return domain.BlockedResult{
+			BlockingComponent: current,
+			Reason:            errors.New("no route to destination"),
+		}
+	}
+
+	var lastBlockedResult domain.PathResult
+	for _, nextHop := range filteredHops {
+		nextLineage := inferLineage(current, nextHop)
+		branchTrace := trace.Clone()
+		result := TraversePathWithTrace(nextHop, destination, destinationID, analyzerCtx, resolver, branchTrace, nextLineage)
+		if !result.IsBlocked() {
+			trace.Hops = branchTrace.Hops
+			trace.Success = branchTrace.Success
+			trace.BlockedAt = branchTrace.BlockedAt
+			return result
+		}
+		lastBlockedResult = result
+	}
+
+	if lastBlockedResult != nil {
+		return lastBlockedResult
+	}
+
+	hop.Action = domain.HopActionBlocked
+	hop.Details = "all paths blocked"
+	trace.BlockedAt = hop
+	trace.Success = false
+	return domain.BlockedResult{
+		BlockingComponent: current,
+		Reason:            errors.New("all paths blocked"),
+	}
+}
+
+func inferHopAction(c domain.Component) domain.HopAction {
+	switch c.GetComponentType() {
+	case "SecurityGroup", "NACL":
+		return domain.HopActionAllowed
+	case "RouteTable", "TransitGateway":
+		return domain.HopActionRouted
+	case "ALB", "NLB", "CLB", "GWLB", "TargetGroup", "VPCLink":
+		return domain.HopActionForwarded
+	case "InternetGateway", "NATGateway", "VPNConnection", "DirectConnectGateway", "IPTarget", "LocalGateway", "CarrierGateway":
+		return domain.HopActionTerminal
+	default:
+		return domain.HopActionEntered
+	}
+}
+
+func inferLineage(source, target domain.Component) domain.HopLineage {
+	sourceType := source.GetComponentType()
+	targetType := target.GetComponentType()
+
+	relationship := inferRelationship(sourceType, targetType)
+	return domain.NewHopLineage(source.GetID(), sourceType, relationship)
+}
+
+func inferRelationship(sourceType, targetType string) string {
+	switch sourceType {
+	case "EC2Instance", "RDSInstance", "LambdaFunction", "EKSPod", "ElastiCacheCluster":
+		switch targetType {
+		case "SecurityGroup":
+			return "attached-to"
+		case "Subnet":
+			return "located-in"
+		}
+	case "Subnet":
+		switch targetType {
+		case "NACL":
+			return "associated-with"
+		case "RouteTable":
+			return "associated-with"
+		}
+	case "RouteTable":
+		switch targetType {
+		case "InternetGateway", "NATGateway", "TransitGatewayAttachment", "VPCEndpoint", "VPCPeering", "VirtualPrivateGateway", "LocalGateway", "CarrierGateway":
+			return "routes-via"
+		case "EC2Instance", "RDSInstance", "IPTarget", "NetworkInterface":
+			return "resolved-to"
+		}
+	case "ALB", "NLB", "CLB", "GWLB":
+		if targetType == "TargetGroup" {
+			return "forwards-to"
+		}
+		if targetType == "SecurityGroup" {
+			return "attached-to"
+		}
+	case "TargetGroup":
+		return "targets"
+	case "TransitGatewayAttachment":
+		if targetType == "TransitGateway" {
+			return "connects-to"
+		}
+	case "TransitGateway":
+		return "routes-via"
+	case "VPCPeering":
+		if targetType == "RouteTable" {
+			return "peers-to"
+		}
+	case "VPCEndpoint", "GWLBEndpoint":
+		switch targetType {
+		case "SecurityGroup":
+			return "attached-to"
+		case "Subnet":
+			return "located-in"
+		case "APIGateway":
+			return "exposes"
+		}
+	case "APIGateway":
+		if targetType == "VPCLink" || targetType == "VPCEndpoint" {
+			return "integrates-via"
+		}
+	case "VPCLink":
+		switch targetType {
+		case "NLB", "ALB":
+			return "targets"
+		case "SecurityGroup":
+			return "attached-to"
+		case "Subnet":
+			return "located-in"
+		}
+	case "VirtualPrivateGateway":
+		if targetType == "VPNConnection" {
+			return "connects-via"
+		}
+	case "DirectConnectOnPrem":
+		if targetType == "DirectConnectGateway" {
+			return "connects-via"
+		}
+	case "SecurityGroup":
+		return "chains-to"
+	case "NACL":
+		if targetType == "RouteTable" {
+			return "precedes"
+		}
+	}
+	return "leads-to"
 }
 
 func isTerminalComponent(c domain.Component) bool {

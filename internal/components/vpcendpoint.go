@@ -120,3 +120,7 @@ func (ve *VPCEndpoint) GetID() string {
 func (ve *VPCEndpoint) GetAccountID() string {
 	return ve.accountID
 }
+
+func (ve *VPCEndpoint) GetComponentType() string {
+	return "VPCEndpoint"
+}

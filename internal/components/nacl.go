@@ -117,3 +117,7 @@ func (n *NACL) GetID() string {
 func (n *NACL) GetAccountID() string {
 	return n.accountID
 }
+
+func (n *NACL) GetComponentType() string {
+	return "NACL"
+}

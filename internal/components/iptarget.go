@@ -40,3 +40,7 @@ func (ip *IPTarget) GetAccountID() string {
 func (ip *IPTarget) IsTerminal() bool {
 	return true
 }
+
+func (ip *IPTarget) GetComponentType() string {
+	return "IPTarget"
+}

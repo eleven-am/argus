@@ -111,6 +111,10 @@ func (a *APIGateway) IsTerminal() bool {
 	return a.data.EndpointType == "EDGE" || (a.data.EndpointType == "REGIONAL" && len(a.data.VPCLinkIDs) == 0)
 }
 
+func (a *APIGateway) GetComponentType() string {
+	return "APIGateway"
+}
+
 type VPCLink struct {
 	data      *domain.VPCLinkData
 	accountID string
@@ -232,6 +236,10 @@ func (v *VPCLink) GetID() string {
 
 func (v *VPCLink) GetAccountID() string {
 	return v.accountID
+}
+
+func (v *VPCLink) GetComponentType() string {
+	return "VPCLink"
 }
 
 func extractNLBARNFromTarget(target string) string {

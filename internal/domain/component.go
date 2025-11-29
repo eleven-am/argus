@@ -5,6 +5,7 @@ type Component interface {
 	GetRoutingTarget() RoutingTarget
 	GetID() string
 	GetAccountID() string
+	GetComponentType() string
 }
 
 type TerminalComponent interface {

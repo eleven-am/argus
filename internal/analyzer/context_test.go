@@ -28,6 +28,10 @@ func (m *mockComponent) GetAccountID() string {
 	return m.accountID
 }
 
+func (m *mockComponent) GetComponentType() string {
+	return "MockComponent"
+}
+
 type mockAccountContext struct{}
 
 func (m *mockAccountContext) AssumeRole(accountID string) (domain.AWSCredentials, error) {

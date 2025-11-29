@@ -90,3 +90,7 @@ func (d *DirectConnectOnPrem) GetID() string {
 func (d *DirectConnectOnPrem) GetAccountID() string {
 	return d.accountID
 }
+
+func (d *DirectConnectOnPrem) GetComponentType() string {
+	return "DirectConnectOnPrem"
+}

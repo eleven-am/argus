@@ -65,3 +65,7 @@ func (eni *NetworkInterface) GetID() string {
 func (eni *NetworkInterface) GetAccountID() string {
 	return eni.accountID
 }
+
+func (eni *NetworkInterface) GetComponentType() string {
+	return "NetworkInterface"
+}

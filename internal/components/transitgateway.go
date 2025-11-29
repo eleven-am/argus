@@ -52,6 +52,10 @@ func (tga *TransitGatewayAttachment) GetAccountID() string {
 	return tga.accountID
 }
 
+func (tga *TransitGatewayAttachment) GetComponentType() string {
+	return "TransitGatewayAttachment"
+}
+
 type TransitGateway struct {
 	data                *domain.TransitGatewayData
 	accountID           string
@@ -222,6 +226,10 @@ func (tgw *TransitGateway) GetAccountID() string {
 	return tgw.accountID
 }
 
+func (tgw *TransitGateway) GetComponentType() string {
+	return "TransitGateway"
+}
+
 type TransitGatewayVPCAttachmentInbound struct {
 	data      *domain.TGWAttachmentData
 	accountID string
@@ -288,6 +296,10 @@ func (tga *TransitGatewayVPCAttachmentInbound) GetAccountID() string {
 	return tga.accountID
 }
 
+func (tga *TransitGatewayVPCAttachmentInbound) GetComponentType() string {
+	return "TransitGatewayVPCAttachmentInbound"
+}
+
 type TGWPeeringAttachment struct {
 	data      *domain.TGWPeeringAttachmentData
 	accountID string
@@ -325,4 +337,8 @@ func (tpa *TGWPeeringAttachment) GetID() string {
 
 func (tpa *TGWPeeringAttachment) GetAccountID() string {
 	return tpa.accountID
+}
+
+func (tpa *TGWPeeringAttachment) GetComponentType() string {
+	return "TGWPeeringAttachment"
 }

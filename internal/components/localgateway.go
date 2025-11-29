@@ -51,3 +51,7 @@ func (lgw *LocalGateway) GetAccountID() string {
 func (lgw *LocalGateway) IsTerminal() bool {
 	return true
 }
+
+func (lgw *LocalGateway) GetComponentType() string {
+	return "LocalGateway"
+}

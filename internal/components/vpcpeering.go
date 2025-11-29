@@ -69,3 +69,7 @@ func (vp *VPCPeering) GetID() string {
 func (vp *VPCPeering) GetAccountID() string {
 	return vp.accountID
 }
+
+func (vp *VPCPeering) GetComponentType() string {
+	return "VPCPeering"
+}

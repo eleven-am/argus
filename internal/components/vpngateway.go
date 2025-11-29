@@ -56,3 +56,7 @@ func (vgw *VirtualPrivateGateway) GetID() string {
 func (vgw *VirtualPrivateGateway) GetAccountID() string {
 	return vgw.accountID
 }
+
+func (vgw *VirtualPrivateGateway) GetComponentType() string {
+	return "VirtualPrivateGateway"
+}

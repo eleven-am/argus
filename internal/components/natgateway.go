@@ -56,3 +56,7 @@ func (nat *NATGateway) GetAccountID() string {
 func (nat *NATGateway) IsTerminal() bool {
 	return true
 }
+
+func (nat *NATGateway) GetComponentType() string {
+	return "NATGateway"
+}

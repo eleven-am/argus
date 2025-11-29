@@ -116,3 +116,7 @@ func (tg *TargetGroup) GetID() string {
 func (tg *TargetGroup) GetAccountID() string {
 	return tg.accountID
 }
+
+func (tg *TargetGroup) GetComponentType() string {
+	return "TargetGroup"
+}

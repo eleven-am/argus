@@ -95,3 +95,7 @@ func (ge *GWLBEndpoint) GetID() string {
 func (ge *GWLBEndpoint) GetAccountID() string {
 	return ge.accountID
 }
+
+func (ge *GWLBEndpoint) GetComponentType() string {
+	return "GWLBEndpoint"
+}

@@ -71,3 +71,7 @@ func (clb *CLB) GetID() string {
 func (clb *CLB) GetAccountID() string {
 	return clb.accountID
 }
+
+func (clb *CLB) GetComponentType() string {
+	return "CLB"
+}

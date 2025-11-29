@@ -163,3 +163,7 @@ func (sg *SecurityGroup) GetID() string {
 func (sg *SecurityGroup) GetAccountID() string {
 	return sg.accountID
 }
+
+func (sg *SecurityGroup) GetComponentType() string {
+	return "SecurityGroup"
+}

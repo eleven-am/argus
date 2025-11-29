@@ -60,3 +60,7 @@ func (e *EKSPod) GetID() string {
 func (e *EKSPod) GetAccountID() string {
 	return e.accountID
 }
+
+func (e *EKSPod) GetComponentType() string {
+	return "EKSPod"
+}

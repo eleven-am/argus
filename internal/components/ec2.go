@@ -59,3 +59,7 @@ func (e *EC2Instance) GetID() string {
 func (e *EC2Instance) GetAccountID() string {
 	return e.accountID
 }
+
+func (e *EC2Instance) GetComponentType() string {
+	return "EC2Instance"
+}

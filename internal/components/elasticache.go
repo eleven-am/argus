@@ -85,3 +85,7 @@ func (e *ElastiCacheCluster) GetID() string {
 func (e *ElastiCacheCluster) GetAccountID() string {
 	return e.accountID
 }
+
+func (e *ElastiCacheCluster) GetComponentType() string {
+	return "ElastiCacheCluster"
+}

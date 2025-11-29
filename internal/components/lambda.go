@@ -93,3 +93,7 @@ func (l *LambdaFunction) GetID() string {
 func (l *LambdaFunction) GetAccountID() string {
 	return l.accountID
 }
+
+func (l *LambdaFunction) GetComponentType() string {
+	return "LambdaFunction"
+}

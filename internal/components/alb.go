@@ -71,3 +71,7 @@ func (alb *ALB) GetID() string {
 func (alb *ALB) GetAccountID() string {
 	return alb.accountID
 }
+
+func (alb *ALB) GetComponentType() string {
+	return "ALB"
+}

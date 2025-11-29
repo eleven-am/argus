@@ -32,6 +32,10 @@ func (t *testComponent) GetAccountID() string {
 	return t.accountID
 }
 
+func (t *testComponent) GetComponentType() string {
+	return "TestComponent"
+}
+
 type testAccountContext struct{}
 
 func (t *testAccountContext) AssumeRole(accountID string) (domain.AWSCredentials, error) {

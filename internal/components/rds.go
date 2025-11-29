@@ -61,3 +61,7 @@ func (r *RDSInstance) GetID() string {
 func (r *RDSInstance) GetAccountID() string {
 	return r.accountID
 }
+
+func (r *RDSInstance) GetComponentType() string {
+	return "RDSInstance"
+}

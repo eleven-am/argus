@@ -49,3 +49,7 @@ func (igw *InternetGateway) GetAccountID() string {
 func (igw *InternetGateway) IsTerminal() bool {
 	return true
 }
+
+func (igw *InternetGateway) GetComponentType() string {
+	return "InternetGateway"
+}

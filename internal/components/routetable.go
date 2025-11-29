@@ -149,6 +149,10 @@ func (rt *RouteTable) GetAccountID() string {
 	return rt.accountID
 }
 
+func (rt *RouteTable) GetComponentType() string {
+	return "RouteTable"
+}
+
 func (rt *RouteTable) routeMatches(route domain.Route, ip string, analyzerCtx domain.AnalyzerContext) (bool, int) {
 	if route.DestinationCIDR != "" {
 		if IPMatchesCIDR(ip, route.DestinationCIDR) {

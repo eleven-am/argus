@@ -58,3 +58,7 @@ func (vpn *VPNConnection) GetAccountID() string {
 func (vpn *VPNConnection) IsTerminal() bool {
 	return true
 }
+
+func (vpn *VPNConnection) GetComponentType() string {
+	return "VPNConnection"
+}

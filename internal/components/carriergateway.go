@@ -58,3 +58,7 @@ func (cgw *CarrierGateway) GetAccountID() string {
 func (cgw *CarrierGateway) IsTerminal() bool {
 	return true
 }
+
+func (cgw *CarrierGateway) GetComponentType() string {
+	return "CarrierGateway"
+}

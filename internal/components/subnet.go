@@ -52,3 +52,7 @@ func (s *Subnet) GetID() string {
 func (s *Subnet) GetAccountID() string {
 	return s.accountID
 }
+
+func (s *Subnet) GetComponentType() string {
+	return "Subnet"
+}
