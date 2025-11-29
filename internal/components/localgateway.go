@@ -55,3 +55,19 @@ func (lgw *LocalGateway) IsTerminal() bool {
 func (lgw *LocalGateway) GetComponentType() string {
 	return "LocalGateway"
 }
+
+func (lgw *LocalGateway) GetVPCID() string {
+	return ""
+}
+
+func (lgw *LocalGateway) GetRegion() string {
+	return ""
+}
+
+func (lgw *LocalGateway) GetSubnetID() string {
+	return ""
+}
+
+func (lgw *LocalGateway) GetAvailabilityZone() string {
+	return ""
+}

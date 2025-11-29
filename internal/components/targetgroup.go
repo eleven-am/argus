@@ -120,3 +120,19 @@ func (tg *TargetGroup) GetAccountID() string {
 func (tg *TargetGroup) GetComponentType() string {
 	return "TargetGroup"
 }
+
+func (tg *TargetGroup) GetVPCID() string {
+	return tg.data.VPCID
+}
+
+func (tg *TargetGroup) GetRegion() string {
+	return ""
+}
+
+func (tg *TargetGroup) GetSubnetID() string {
+	return ""
+}
+
+func (tg *TargetGroup) GetAvailabilityZone() string {
+	return ""
+}

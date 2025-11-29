@@ -124,3 +124,22 @@ func (ve *VPCEndpoint) GetAccountID() string {
 func (ve *VPCEndpoint) GetComponentType() string {
 	return "VPCEndpoint"
 }
+
+func (ve *VPCEndpoint) GetVPCID() string {
+	return ve.data.VPCID
+}
+
+func (ve *VPCEndpoint) GetRegion() string {
+	return ""
+}
+
+func (ve *VPCEndpoint) GetSubnetID() string {
+	if len(ve.data.SubnetIDs) > 0 {
+		return ve.data.SubnetIDs[0]
+	}
+	return ""
+}
+
+func (ve *VPCEndpoint) GetAvailabilityZone() string {
+	return ""
+}

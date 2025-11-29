@@ -62,3 +62,19 @@ func (vpn *VPNConnection) IsTerminal() bool {
 func (vpn *VPNConnection) GetComponentType() string {
 	return "VPNConnection"
 }
+
+func (vpn *VPNConnection) GetVPCID() string {
+	return ""
+}
+
+func (vpn *VPNConnection) GetRegion() string {
+	return ""
+}
+
+func (vpn *VPNConnection) GetSubnetID() string {
+	return ""
+}
+
+func (vpn *VPNConnection) GetAvailabilityZone() string {
+	return ""
+}

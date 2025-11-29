@@ -75,3 +75,22 @@ func (nlb *NLB) GetAccountID() string {
 func (nlb *NLB) GetComponentType() string {
 	return "NLB"
 }
+
+func (nlb *NLB) GetVPCID() string {
+	return nlb.data.VPCID
+}
+
+func (nlb *NLB) GetRegion() string {
+	return ""
+}
+
+func (nlb *NLB) GetSubnetID() string {
+	if len(nlb.data.SubnetIDs) > 0 {
+		return nlb.data.SubnetIDs[0]
+	}
+	return ""
+}
+
+func (nlb *NLB) GetAvailabilityZone() string {
+	return ""
+}

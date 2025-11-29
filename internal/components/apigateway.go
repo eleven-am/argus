@@ -115,6 +115,22 @@ func (a *APIGateway) GetComponentType() string {
 	return "APIGateway"
 }
 
+func (a *APIGateway) GetVPCID() string {
+	return ""
+}
+
+func (a *APIGateway) GetRegion() string {
+	return ""
+}
+
+func (a *APIGateway) GetSubnetID() string {
+	return ""
+}
+
+func (a *APIGateway) GetAvailabilityZone() string {
+	return ""
+}
+
 type VPCLink struct {
 	data      *domain.VPCLinkData
 	accountID string
@@ -240,6 +256,25 @@ func (v *VPCLink) GetAccountID() string {
 
 func (v *VPCLink) GetComponentType() string {
 	return "VPCLink"
+}
+
+func (v *VPCLink) GetVPCID() string {
+	return v.data.VPCID
+}
+
+func (v *VPCLink) GetRegion() string {
+	return ""
+}
+
+func (v *VPCLink) GetSubnetID() string {
+	if len(v.data.SubnetIDs) > 0 {
+		return v.data.SubnetIDs[0]
+	}
+	return ""
+}
+
+func (v *VPCLink) GetAvailabilityZone() string {
+	return ""
 }
 
 func extractNLBARNFromTarget(target string) string {

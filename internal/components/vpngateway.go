@@ -60,3 +60,19 @@ func (vgw *VirtualPrivateGateway) GetAccountID() string {
 func (vgw *VirtualPrivateGateway) GetComponentType() string {
 	return "VirtualPrivateGateway"
 }
+
+func (vgw *VirtualPrivateGateway) GetVPCID() string {
+	return vgw.data.VPCID
+}
+
+func (vgw *VirtualPrivateGateway) GetRegion() string {
+	return ""
+}
+
+func (vgw *VirtualPrivateGateway) GetSubnetID() string {
+	return ""
+}
+
+func (vgw *VirtualPrivateGateway) GetAvailabilityZone() string {
+	return ""
+}

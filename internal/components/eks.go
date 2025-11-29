@@ -64,3 +64,19 @@ func (e *EKSPod) GetAccountID() string {
 func (e *EKSPod) GetComponentType() string {
 	return "EKSPod"
 }
+
+func (e *EKSPod) GetVPCID() string {
+	return ""
+}
+
+func (e *EKSPod) GetRegion() string {
+	return ""
+}
+
+func (e *EKSPod) GetSubnetID() string {
+	return e.data.SubnetID
+}
+
+func (e *EKSPod) GetAvailabilityZone() string {
+	return ""
+}

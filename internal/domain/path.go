@@ -17,12 +17,19 @@ type ComponentHop struct {
 	ComponentType string
 	AccountID     string
 
+	VPCID            string
+	Region           string
+	SubnetID         string
+	AvailabilityZone string
+
 	SourceID     string
 	SourceType   string
 	Relationship string
 
 	Action  HopAction
 	Details string
+
+	RuleEvaluations []RuleEvaluation
 }
 
 type PathTrace struct {
@@ -123,7 +130,7 @@ func NewHopLineage(sourceID, sourceType, relationship string) HopLineage {
 }
 
 func HopFromComponent(c Component, lineage HopLineage, action HopAction, details string) *ComponentHop {
-	return &ComponentHop{
+	hop := &ComponentHop{
 		ComponentID:   c.GetID(),
 		ComponentType: c.GetComponentType(),
 		AccountID:     c.GetAccountID(),
@@ -133,4 +140,13 @@ func HopFromComponent(c Component, lineage HopLineage, action HopAction, details
 		Action:        action,
 		Details:       details,
 	}
+
+	if mp, ok := c.(MetadataProvider); ok {
+		hop.VPCID = mp.GetVPCID()
+		hop.Region = mp.GetRegion()
+		hop.SubnetID = mp.GetSubnetID()
+		hop.AvailabilityZone = mp.GetAvailabilityZone()
+	}
+
+	return hop
 }

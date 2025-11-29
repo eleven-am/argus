@@ -89,3 +89,22 @@ func (e *ElastiCacheCluster) GetAccountID() string {
 func (e *ElastiCacheCluster) GetComponentType() string {
 	return "ElastiCacheCluster"
 }
+
+func (e *ElastiCacheCluster) GetVPCID() string {
+	return e.data.VPCID
+}
+
+func (e *ElastiCacheCluster) GetRegion() string {
+	return ""
+}
+
+func (e *ElastiCacheCluster) GetSubnetID() string {
+	if len(e.data.SubnetIDs) > 0 {
+		return e.data.SubnetIDs[0]
+	}
+	return ""
+}
+
+func (e *ElastiCacheCluster) GetAvailabilityZone() string {
+	return ""
+}

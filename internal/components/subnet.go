@@ -56,3 +56,19 @@ func (s *Subnet) GetAccountID() string {
 func (s *Subnet) GetComponentType() string {
 	return "Subnet"
 }
+
+func (s *Subnet) GetVPCID() string {
+	return s.data.VPCID
+}
+
+func (s *Subnet) GetRegion() string {
+	return ""
+}
+
+func (s *Subnet) GetSubnetID() string {
+	return s.data.ID
+}
+
+func (s *Subnet) GetAvailabilityZone() string {
+	return s.data.AvailabilityZone
+}

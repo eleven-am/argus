@@ -53,3 +53,19 @@ func (igw *InternetGateway) IsTerminal() bool {
 func (igw *InternetGateway) GetComponentType() string {
 	return "InternetGateway"
 }
+
+func (igw *InternetGateway) GetVPCID() string {
+	return igw.data.VPCID
+}
+
+func (igw *InternetGateway) GetRegion() string {
+	return ""
+}
+
+func (igw *InternetGateway) GetSubnetID() string {
+	return ""
+}
+
+func (igw *InternetGateway) GetAvailabilityZone() string {
+	return ""
+}

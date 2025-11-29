@@ -19,3 +19,10 @@ type FilterComponent interface {
 	EvaluateOutbound(dest RoutingTarget, analyzerCtx AnalyzerContext) error
 	EvaluateInbound(source RoutingTarget, analyzerCtx AnalyzerContext) error
 }
+
+type MetadataProvider interface {
+	GetVPCID() string
+	GetRegion() string
+	GetSubnetID() string
+	GetAvailabilityZone() string
+}

@@ -18,12 +18,13 @@ type SecurityGroupRule struct {
 }
 
 type SubnetData struct {
-	ID            string
-	VPCID         string
-	CIDRBlock     string
-	IPv6CIDRBlock string
-	NaclID        string
-	RouteTableID  string
+	ID               string
+	VPCID            string
+	AvailabilityZone string
+	CIDRBlock        string
+	IPv6CIDRBlock    string
+	NaclID           string
+	RouteTableID     string
 }
 
 type NACLData struct {

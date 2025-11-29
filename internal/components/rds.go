@@ -65,3 +65,22 @@ func (r *RDSInstance) GetAccountID() string {
 func (r *RDSInstance) GetComponentType() string {
 	return "RDSInstance"
 }
+
+func (r *RDSInstance) GetVPCID() string {
+	return ""
+}
+
+func (r *RDSInstance) GetRegion() string {
+	return ""
+}
+
+func (r *RDSInstance) GetSubnetID() string {
+	if len(r.data.SubnetIDs) > 0 {
+		return r.data.SubnetIDs[0]
+	}
+	return ""
+}
+
+func (r *RDSInstance) GetAvailabilityZone() string {
+	return ""
+}

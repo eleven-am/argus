@@ -56,6 +56,25 @@ func (tga *TransitGatewayAttachment) GetComponentType() string {
 	return "TransitGatewayAttachment"
 }
 
+func (tga *TransitGatewayAttachment) GetVPCID() string {
+	return tga.data.VPCID
+}
+
+func (tga *TransitGatewayAttachment) GetRegion() string {
+	return ""
+}
+
+func (tga *TransitGatewayAttachment) GetSubnetID() string {
+	if len(tga.data.SubnetIDs) > 0 {
+		return tga.data.SubnetIDs[0]
+	}
+	return ""
+}
+
+func (tga *TransitGatewayAttachment) GetAvailabilityZone() string {
+	return ""
+}
+
 type TransitGateway struct {
 	data                *domain.TransitGatewayData
 	accountID           string
@@ -230,6 +249,22 @@ func (tgw *TransitGateway) GetComponentType() string {
 	return "TransitGateway"
 }
 
+func (tgw *TransitGateway) GetVPCID() string {
+	return ""
+}
+
+func (tgw *TransitGateway) GetRegion() string {
+	return ""
+}
+
+func (tgw *TransitGateway) GetSubnetID() string {
+	return ""
+}
+
+func (tgw *TransitGateway) GetAvailabilityZone() string {
+	return ""
+}
+
 type TransitGatewayVPCAttachmentInbound struct {
 	data      *domain.TGWAttachmentData
 	accountID string
@@ -300,6 +335,25 @@ func (tga *TransitGatewayVPCAttachmentInbound) GetComponentType() string {
 	return "TransitGatewayVPCAttachmentInbound"
 }
 
+func (tga *TransitGatewayVPCAttachmentInbound) GetVPCID() string {
+	return tga.data.VPCID
+}
+
+func (tga *TransitGatewayVPCAttachmentInbound) GetRegion() string {
+	return ""
+}
+
+func (tga *TransitGatewayVPCAttachmentInbound) GetSubnetID() string {
+	if len(tga.data.SubnetIDs) > 0 {
+		return tga.data.SubnetIDs[0]
+	}
+	return ""
+}
+
+func (tga *TransitGatewayVPCAttachmentInbound) GetAvailabilityZone() string {
+	return ""
+}
+
 type TGWPeeringAttachment struct {
 	data      *domain.TGWPeeringAttachmentData
 	accountID string
@@ -341,4 +395,20 @@ func (tpa *TGWPeeringAttachment) GetAccountID() string {
 
 func (tpa *TGWPeeringAttachment) GetComponentType() string {
 	return "TGWPeeringAttachment"
+}
+
+func (tpa *TGWPeeringAttachment) GetVPCID() string {
+	return ""
+}
+
+func (tpa *TGWPeeringAttachment) GetRegion() string {
+	return ""
+}
+
+func (tpa *TGWPeeringAttachment) GetSubnetID() string {
+	return ""
+}
+
+func (tpa *TGWPeeringAttachment) GetAvailabilityZone() string {
+	return ""
 }

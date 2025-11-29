@@ -71,3 +71,19 @@ func (dxgw *DirectConnectGateway) IsTerminal() bool {
 func (dxgw *DirectConnectGateway) GetComponentType() string {
 	return "DirectConnectGateway"
 }
+
+func (dxgw *DirectConnectGateway) GetVPCID() string {
+	return ""
+}
+
+func (dxgw *DirectConnectGateway) GetRegion() string {
+	return ""
+}
+
+func (dxgw *DirectConnectGateway) GetSubnetID() string {
+	return ""
+}
+
+func (dxgw *DirectConnectGateway) GetAvailabilityZone() string {
+	return ""
+}

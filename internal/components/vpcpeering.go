@@ -73,3 +73,19 @@ func (vp *VPCPeering) GetAccountID() string {
 func (vp *VPCPeering) GetComponentType() string {
 	return "VPCPeering"
 }
+
+func (vp *VPCPeering) GetVPCID() string {
+	return vp.sourceVPCID
+}
+
+func (vp *VPCPeering) GetRegion() string {
+	return ""
+}
+
+func (vp *VPCPeering) GetSubnetID() string {
+	return ""
+}
+
+func (vp *VPCPeering) GetAvailabilityZone() string {
+	return ""
+}

@@ -75,3 +75,22 @@ func (alb *ALB) GetAccountID() string {
 func (alb *ALB) GetComponentType() string {
 	return "ALB"
 }
+
+func (alb *ALB) GetVPCID() string {
+	return alb.data.VPCID
+}
+
+func (alb *ALB) GetRegion() string {
+	return ""
+}
+
+func (alb *ALB) GetSubnetID() string {
+	if len(alb.data.SubnetIDs) > 0 {
+		return alb.data.SubnetIDs[0]
+	}
+	return ""
+}
+
+func (alb *ALB) GetAvailabilityZone() string {
+	return ""
+}

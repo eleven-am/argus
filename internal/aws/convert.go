@@ -82,12 +82,13 @@ func toSubnetData(subnet *ec2types.Subnet, naclID, rtID string) *domain.SubnetDa
 		}
 	}
 	return &domain.SubnetData{
-		ID:            derefString(subnet.SubnetId),
-		VPCID:         derefString(subnet.VpcId),
-		CIDRBlock:     derefString(subnet.CidrBlock),
-		IPv6CIDRBlock: ipv6CIDR,
-		NaclID:        naclID,
-		RouteTableID:  rtID,
+		ID:               derefString(subnet.SubnetId),
+		VPCID:            derefString(subnet.VpcId),
+		AvailabilityZone: derefString(subnet.AvailabilityZone),
+		CIDRBlock:        derefString(subnet.CidrBlock),
+		IPv6CIDRBlock:    ipv6CIDR,
+		NaclID:           naclID,
+		RouteTableID:     rtID,
 	}
 }
 

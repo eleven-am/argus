@@ -153,6 +153,22 @@ func (rt *RouteTable) GetComponentType() string {
 	return "RouteTable"
 }
 
+func (rt *RouteTable) GetVPCID() string {
+	return rt.data.VPCID
+}
+
+func (rt *RouteTable) GetRegion() string {
+	return ""
+}
+
+func (rt *RouteTable) GetSubnetID() string {
+	return ""
+}
+
+func (rt *RouteTable) GetAvailabilityZone() string {
+	return ""
+}
+
 func (rt *RouteTable) routeMatches(route domain.Route, ip string, analyzerCtx domain.AnalyzerContext) (bool, int) {
 	if route.DestinationCIDR != "" {
 		if IPMatchesCIDR(ip, route.DestinationCIDR) {

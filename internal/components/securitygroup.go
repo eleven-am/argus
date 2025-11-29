@@ -167,3 +167,104 @@ func (sg *SecurityGroup) GetAccountID() string {
 func (sg *SecurityGroup) GetComponentType() string {
 	return "SecurityGroup"
 }
+
+func (sg *SecurityGroup) GetVPCID() string {
+	return sg.data.VPCID
+}
+
+func (sg *SecurityGroup) GetRegion() string {
+	return ""
+}
+
+func (sg *SecurityGroup) GetSubnetID() string {
+	return ""
+}
+
+func (sg *SecurityGroup) GetAvailabilityZone() string {
+	return ""
+}
+
+func (sg *SecurityGroup) EvaluateWithDetails(target domain.RoutingTarget, direction string) domain.EvaluationResult {
+	var rules []domain.SecurityGroupRule
+	ruleType := "outbound"
+	if direction == "inbound" {
+		rules = sg.data.InboundRules
+		ruleType = "inbound"
+	} else {
+		rules = sg.data.OutboundRules
+	}
+
+	var evaluations []domain.RuleEvaluation
+
+	for i, rule := range rules {
+		eval := domain.RuleEvaluation{
+			RuleID:   fmt.Sprintf("%s-rule-%d", ruleType, i),
+			RuleType: "SecurityGroup",
+			Protocol: rule.Protocol,
+			PortFrom: rule.FromPort,
+			PortTo:   rule.ToPort,
+			Priority: i,
+			Action:   "allow",
+		}
+
+		if len(rule.CIDRBlocks) > 0 {
+			eval.DestCIDR = rule.CIDRBlocks[0]
+		}
+
+		protocolMatch := protocolMatches(rule.Protocol, target.Protocol)
+		portMatch := portInRange(target.Port, rule.FromPort, rule.ToPort)
+
+		if !protocolMatch {
+			eval.Matched = false
+			eval.Reason = fmt.Sprintf("protocol mismatch: rule=%s target=%s", rule.Protocol, target.Protocol)
+			evaluations = append(evaluations, eval)
+			continue
+		}
+
+		if !portMatch {
+			eval.Matched = false
+			eval.Reason = fmt.Sprintf("port %d not in range %d-%d", target.Port, rule.FromPort, rule.ToPort)
+			evaluations = append(evaluations, eval)
+			continue
+		}
+
+		cidrMatch := false
+		for _, cidr := range rule.CIDRBlocks {
+			if IPMatchesCIDR(target.IP, cidr) {
+				cidrMatch = true
+				eval.DestCIDR = cidr
+				break
+			}
+		}
+		if !cidrMatch {
+			for _, cidr := range rule.IPv6CIDRBlocks {
+				if IPMatchesCIDR(target.IP, cidr) {
+					cidrMatch = true
+					eval.DestCIDR = cidr
+					break
+				}
+			}
+		}
+
+		if cidrMatch {
+			eval.Matched = true
+			eval.Reason = "CIDR match"
+			evaluations = append(evaluations, eval)
+			return domain.EvaluationResult{
+				Allowed:     true,
+				Reason:      fmt.Sprintf("allowed by rule %d", i),
+				Evaluations: evaluations,
+			}
+		}
+
+		eval.Matched = false
+		eval.Reason = fmt.Sprintf("IP %s not in any CIDR", target.IP)
+		evaluations = append(evaluations, eval)
+	}
+
+	return domain.EvaluationResult{
+		Allowed:     false,
+		Reason:      fmt.Sprintf("no %s rule allows %s:%d/%s", ruleType, target.IP, target.Port, target.Protocol),
+		Evaluations: evaluations,
+	}
+}

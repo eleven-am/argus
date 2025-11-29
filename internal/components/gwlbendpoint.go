@@ -99,3 +99,22 @@ func (ge *GWLBEndpoint) GetAccountID() string {
 func (ge *GWLBEndpoint) GetComponentType() string {
 	return "GWLBEndpoint"
 }
+
+func (ge *GWLBEndpoint) GetVPCID() string {
+	return ge.data.VPCID
+}
+
+func (ge *GWLBEndpoint) GetRegion() string {
+	return ""
+}
+
+func (ge *GWLBEndpoint) GetSubnetID() string {
+	if len(ge.data.SubnetIDs) > 0 {
+		return ge.data.SubnetIDs[0]
+	}
+	return ""
+}
+
+func (ge *GWLBEndpoint) GetAvailabilityZone() string {
+	return ""
+}

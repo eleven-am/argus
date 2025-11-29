@@ -63,3 +63,19 @@ func (e *EC2Instance) GetAccountID() string {
 func (e *EC2Instance) GetComponentType() string {
 	return "EC2Instance"
 }
+
+func (e *EC2Instance) GetVPCID() string {
+	return ""
+}
+
+func (e *EC2Instance) GetRegion() string {
+	return ""
+}
+
+func (e *EC2Instance) GetSubnetID() string {
+	return e.data.SubnetID
+}
+
+func (e *EC2Instance) GetAvailabilityZone() string {
+	return ""
+}

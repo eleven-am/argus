@@ -60,3 +60,19 @@ func (nat *NATGateway) IsTerminal() bool {
 func (nat *NATGateway) GetComponentType() string {
 	return "NATGateway"
 }
+
+func (nat *NATGateway) GetVPCID() string {
+	return ""
+}
+
+func (nat *NATGateway) GetRegion() string {
+	return ""
+}
+
+func (nat *NATGateway) GetSubnetID() string {
+	return nat.data.SubnetID
+}
+
+func (nat *NATGateway) GetAvailabilityZone() string {
+	return ""
+}

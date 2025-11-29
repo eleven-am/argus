@@ -75,3 +75,22 @@ func (clb *CLB) GetAccountID() string {
 func (clb *CLB) GetComponentType() string {
 	return "CLB"
 }
+
+func (clb *CLB) GetVPCID() string {
+	return clb.data.VPCID
+}
+
+func (clb *CLB) GetRegion() string {
+	return ""
+}
+
+func (clb *CLB) GetSubnetID() string {
+	if len(clb.data.SubnetIDs) > 0 {
+		return clb.data.SubnetIDs[0]
+	}
+	return ""
+}
+
+func (clb *CLB) GetAvailabilityZone() string {
+	return ""
+}

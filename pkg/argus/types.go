@@ -34,6 +34,10 @@ type HopLineage = domain.HopLineage
 
 type AllPathsResult = domain.AllPathsResult
 
+type RuleEvaluation = domain.RuleEvaluation
+
+type EvaluationResult = domain.EvaluationResult
+
 type resourceType int
 
 const (

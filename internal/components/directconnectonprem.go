@@ -94,3 +94,19 @@ func (d *DirectConnectOnPrem) GetAccountID() string {
 func (d *DirectConnectOnPrem) GetComponentType() string {
 	return "DirectConnectOnPrem"
 }
+
+func (d *DirectConnectOnPrem) GetVPCID() string {
+	return ""
+}
+
+func (d *DirectConnectOnPrem) GetRegion() string {
+	return ""
+}
+
+func (d *DirectConnectOnPrem) GetSubnetID() string {
+	return ""
+}
+
+func (d *DirectConnectOnPrem) GetAvailabilityZone() string {
+	return ""
+}

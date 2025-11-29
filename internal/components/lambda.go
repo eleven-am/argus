@@ -97,3 +97,22 @@ func (l *LambdaFunction) GetAccountID() string {
 func (l *LambdaFunction) GetComponentType() string {
 	return "LambdaFunction"
 }
+
+func (l *LambdaFunction) GetVPCID() string {
+	return l.data.VPCID
+}
+
+func (l *LambdaFunction) GetRegion() string {
+	return ""
+}
+
+func (l *LambdaFunction) GetSubnetID() string {
+	if len(l.data.SubnetIDs) > 0 {
+		return l.data.SubnetIDs[0]
+	}
+	return ""
+}
+
+func (l *LambdaFunction) GetAvailabilityZone() string {
+	return ""
+}

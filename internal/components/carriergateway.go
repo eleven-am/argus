@@ -62,3 +62,19 @@ func (cgw *CarrierGateway) IsTerminal() bool {
 func (cgw *CarrierGateway) GetComponentType() string {
 	return "CarrierGateway"
 }
+
+func (cgw *CarrierGateway) GetVPCID() string {
+	return ""
+}
+
+func (cgw *CarrierGateway) GetRegion() string {
+	return ""
+}
+
+func (cgw *CarrierGateway) GetSubnetID() string {
+	return ""
+}
+
+func (cgw *CarrierGateway) GetAvailabilityZone() string {
+	return ""
+}

@@ -60,3 +60,22 @@ func (gwlb *GWLB) GetAccountID() string {
 func (gwlb *GWLB) GetComponentType() string {
 	return "GWLB"
 }
+
+func (gwlb *GWLB) GetVPCID() string {
+	return gwlb.data.VPCID
+}
+
+func (gwlb *GWLB) GetRegion() string {
+	return ""
+}
+
+func (gwlb *GWLB) GetSubnetID() string {
+	if len(gwlb.data.SubnetIDs) > 0 {
+		return gwlb.data.SubnetIDs[0]
+	}
+	return ""
+}
+
+func (gwlb *GWLB) GetAvailabilityZone() string {
+	return ""
+}

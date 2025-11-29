@@ -69,3 +69,19 @@ func (eni *NetworkInterface) GetAccountID() string {
 func (eni *NetworkInterface) GetComponentType() string {
 	return "NetworkInterface"
 }
+
+func (eni *NetworkInterface) GetVPCID() string {
+	return ""
+}
+
+func (eni *NetworkInterface) GetRegion() string {
+	return ""
+}
+
+func (eni *NetworkInterface) GetSubnetID() string {
+	return ""
+}
+
+func (eni *NetworkInterface) GetAvailabilityZone() string {
+	return ""
+}

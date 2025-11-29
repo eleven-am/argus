@@ -95,6 +95,12 @@ func TraversePathWithTrace(current domain.Component, destination domain.RoutingT
 
 	action := inferHopAction(current)
 	hop := domain.HopFromComponent(current, lineage, action, "")
+
+	if evaluator, ok := current.(domain.RuleEvaluator); ok {
+		result := evaluator.EvaluateWithDetails(destination, destination.Direction)
+		hop.RuleEvaluations = result.Evaluations
+	}
+
 	trace.AddHop(hop)
 
 	nextHops, err := current.GetNextHops(destination, analyzerCtx)
@@ -457,6 +463,12 @@ func traverseAllPathsRecursive(current domain.Component, destination domain.Rout
 
 	action := inferHopAction(current)
 	hop := domain.HopFromComponent(current, lineage, action, "")
+
+	if evaluator, ok := current.(domain.RuleEvaluator); ok {
+		result := evaluator.EvaluateWithDetails(destination, destination.Direction)
+		hop.RuleEvaluations = result.Evaluations
+	}
+
 	trace.AddHop(hop)
 
 	nextHops, err := current.GetNextHops(destination, analyzerCtx)

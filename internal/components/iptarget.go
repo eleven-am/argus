@@ -44,3 +44,19 @@ func (ip *IPTarget) IsTerminal() bool {
 func (ip *IPTarget) GetComponentType() string {
 	return "IPTarget"
 }
+
+func (ip *IPTarget) GetVPCID() string {
+	return ""
+}
+
+func (ip *IPTarget) GetRegion() string {
+	return ""
+}
+
+func (ip *IPTarget) GetSubnetID() string {
+	return ""
+}
+
+func (ip *IPTarget) GetAvailabilityZone() string {
+	return ""
+}
