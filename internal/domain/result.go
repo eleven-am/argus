@@ -1,0 +1,37 @@
+package domain
+
+import "fmt"
+
+type PathResult interface {
+	IsBlocked() bool
+	GetBlockingReason() string
+}
+
+type SuccessResult struct{}
+
+func (s SuccessResult) IsBlocked() bool           { return false }
+func (s SuccessResult) GetBlockingReason() string { return "" }
+
+type BlockedResult struct {
+	BlockingComponent Component
+	Reason            error
+}
+
+func (b BlockedResult) IsBlocked() bool { return true }
+func (b BlockedResult) GetBlockingReason() string {
+	return fmt.Sprintf("Blocked at %s: %s", b.BlockingComponent.GetID(), b.Reason.Error())
+}
+
+type ReachabilityResult struct {
+	SourceToDestination PathResult
+	DestinationToSource PathResult
+	OverallSuccess      bool
+}
+
+func CombineResults(srcToDest, destToSrc PathResult) ReachabilityResult {
+	return ReachabilityResult{
+		SourceToDestination: srcToDest,
+		DestinationToSource: destToSrc,
+		OverallSuccess:      !srcToDest.IsBlocked() && !destToSrc.IsBlocked(),
+	}
+}
