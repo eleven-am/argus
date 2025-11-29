@@ -104,6 +104,19 @@ func (rt *RouteTable) GetNextHops(dest domain.RoutingTarget, analyzerCtx domain.
 		if strings.Contains(endpointData.ServiceName, ".gwlb") || endpointData.Type == "GatewayLoadBalancer" {
 			return []domain.Component{NewGWLBEndpoint(endpointData, rt.accountID)}, nil
 		}
+		if strings.Contains(endpointData.ServiceName, "network-firewall") {
+			firewallData, err := client.GetNetworkFirewallByEndpoint(ctx, matchedRoute.TargetID)
+			if err == nil && firewallData != nil {
+				subnetID := ""
+				for _, mapping := range firewallData.SubnetMappings {
+					if mapping.EndpointID == matchedRoute.TargetID {
+						subnetID = mapping.SubnetID
+						break
+					}
+				}
+				return []domain.Component{NewNetworkFirewallEndpoint(firewallData.ID, matchedRoute.TargetID, subnetID, rt.accountID)}, nil
+			}
+		}
 		return []domain.Component{NewVPCEndpoint(endpointData, rt.accountID)}, nil
 
 	case "vpc-peering":

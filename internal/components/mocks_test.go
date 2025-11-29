@@ -37,6 +37,7 @@ type mockAWSClient struct {
 	eksPods             map[string]*domain.EKSPodData
 	elasticacheClusters map[string]*domain.ElastiCacheClusterData
 	dxgwAttachments     map[string][]domain.TGWAttachmentData
+	networkFirewalls    map[string]*domain.NetworkFirewallData
 }
 
 func newMockAWSClient() *mockAWSClient {
@@ -70,6 +71,7 @@ func newMockAWSClient() *mockAWSClient {
 		eksPods:             make(map[string]*domain.EKSPodData),
 		elasticacheClusters: make(map[string]*domain.ElastiCacheClusterData),
 		dxgwAttachments:     make(map[string][]domain.TGWAttachmentData),
+		networkFirewalls:    make(map[string]*domain.NetworkFirewallData),
 	}
 }
 
@@ -396,6 +398,24 @@ func (m *mockAWSClient) GetDirectConnectGatewayAttachments(ctx context.Context, 
 		return attachments, nil
 	}
 	return []domain.TGWAttachmentData{}, nil
+}
+
+func (m *mockAWSClient) GetNetworkFirewall(ctx context.Context, firewallID string) (*domain.NetworkFirewallData, error) {
+	if fw, ok := m.networkFirewalls[firewallID]; ok {
+		return fw, nil
+	}
+	return nil, fmt.Errorf("network firewall %s not found", firewallID)
+}
+
+func (m *mockAWSClient) GetNetworkFirewallByEndpoint(ctx context.Context, endpointID string) (*domain.NetworkFirewallData, error) {
+	for _, fw := range m.networkFirewalls {
+		for _, mapping := range fw.SubnetMappings {
+			if mapping.EndpointID == endpointID {
+				return fw, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("network firewall for endpoint %s not found", endpointID)
 }
 
 type mockAccountContext struct {

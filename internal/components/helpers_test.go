@@ -77,6 +77,13 @@ func TestProtocolMatches(t *testing.T) {
 		{"tcp not udp", "tcp", "udp", false},
 		{"udp matches udp", "udp", "udp", true},
 		{"icmp matches icmp", "icmp", "icmp", true},
+		{"icmpv6 matches icmpv6", "icmpv6", "icmpv6", true},
+		{"protocol 58 matches icmpv6", "58", "icmpv6", true},
+		{"protocol 1 matches icmp", "1", "icmp", true},
+		{"protocol 6 matches tcp", "6", "tcp", true},
+		{"protocol 17 matches udp", "17", "udp", true},
+		{"icmp not icmpv6", "icmp", "icmpv6", false},
+		{"icmpv6 not icmp", "icmpv6", "icmp", false},
 	}
 
 	for _, tt := range tests {

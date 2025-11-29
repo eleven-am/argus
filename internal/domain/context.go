@@ -74,6 +74,9 @@ type AWSClient interface {
 	GetElastiCacheClusterByPrivateIP(ctx context.Context, ip, vpcID string) (*ElastiCacheClusterData, error)
 
 	GetDirectConnectGatewayAttachments(ctx context.Context, dxgwID string) ([]TGWAttachmentData, error)
+
+	GetNetworkFirewall(ctx context.Context, firewallID string) (*NetworkFirewallData, error)
+	GetNetworkFirewallByEndpoint(ctx context.Context, endpointID string) (*NetworkFirewallData, error)
 }
 
 type AnalyzerContext interface {

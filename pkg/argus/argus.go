@@ -3,6 +3,7 @@ package argus
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 
@@ -53,4 +54,18 @@ func TestReachabilityAllPaths(ctx context.Context, source, dest ResourceRef, acc
 
 	result := analyzer.TestReachabilityAllPaths(ctx, sourceComponent, destComponent, accountCtx)
 	return result, nil
+}
+
+// FlowSimulator provides traffic flow simulation with caching.
+// Use NewFlowSimulator() or NewFlowSimulatorWithTTL() to create an instance.
+type FlowSimulator = analyzer.FlowSimulator
+
+// NewFlowSimulator creates a FlowSimulator with default 5-minute cache TTL.
+func NewFlowSimulator() *FlowSimulator {
+	return analyzer.NewFlowSimulator()
+}
+
+// NewFlowSimulatorWithTTL creates a FlowSimulator with a custom cache TTL.
+func NewFlowSimulatorWithTTL(ttl time.Duration) *FlowSimulator {
+	return analyzer.NewFlowSimulatorWithTTL(ttl)
 }

@@ -106,6 +106,10 @@ func normalizeProtocol(p string) string {
 		return "tcp"
 	case "17":
 		return "udp"
+	case "1":
+		return "icmp"
+	case "58":
+		return "icmpv6"
 	default:
 		return strings.ToLower(p)
 	}

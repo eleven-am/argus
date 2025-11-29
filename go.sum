@@ -32,6 +32,8 @@ github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.14 h1:FIouAnCE
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.14/go.mod h1:UTwDc5COa5+guonQU8qBikJo1ZJ4ln2r1MkF7Dqag1E=
 github.com/aws/aws-sdk-go-v2/service/lambda v1.83.1 h1:YzOkKK2UaDmc5l5AAR4o0eUFTldhyAEiDR6pgTw/NOk=
 github.com/aws/aws-sdk-go-v2/service/lambda v1.83.1/go.mod h1:eIjSAyPg9Qgrxc3hO8ppauvdjVnWbmudyAevEnOuat8=
+github.com/aws/aws-sdk-go-v2/service/networkfirewall v1.59.0 h1:mXDNco+HNf9gm/g/UXN3nxksFTcWR3WMRCR4htB13BA=
+github.com/aws/aws-sdk-go-v2/service/networkfirewall v1.59.0/go.mod h1:gvepatTXIpepuVOlPZOjFlrvUxfK9z0A5lnbcTUtDK0=
 github.com/aws/aws-sdk-go-v2/service/rds v1.111.1 h1:M+J7Y9s0JHeHaSVFoq5aaTDjj58bbUqbCuW7BIam3KI=
 github.com/aws/aws-sdk-go-v2/service/rds v1.111.1/go.mod h1:DCoBFX5nu7ZQxaZqGe+5Ai8Qd3lLpcQF1EhMrlC/FWU=
 github.com/aws/aws-sdk-go-v2/service/sts v1.41.2 h1:a5UTtD4mHBU3t0o6aHQZFJTNKVfxFWfPX7J0Lr7G+uY=

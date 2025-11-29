@@ -19,6 +19,8 @@ import (
 	elbv2 "github.com/aws/aws-sdk-go-v2/service/elasticloadbalancingv2"
 	elbv2types "github.com/aws/aws-sdk-go-v2/service/elasticloadbalancingv2/types"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
+	"github.com/aws/aws-sdk-go-v2/service/networkfirewall"
+	nfwtypes "github.com/aws/aws-sdk-go-v2/service/networkfirewall/types"
 	"github.com/aws/aws-sdk-go-v2/service/rds"
 	rdstypes "github.com/aws/aws-sdk-go-v2/service/rds/types"
 	"golang.org/x/sync/errgroup"
@@ -27,18 +29,19 @@ import (
 )
 
 type Client struct {
-	ec2Client           *ec2.Client
-	rdsClient           *rds.Client
-	lambdaClient        *lambda.Client
-	elbClient           *elb.Client
-	elbv2Client         *elbv2.Client
-	apigwClient         *apigateway.Client
-	apigwv2Client       *apigatewayv2.Client
-	elasticacheClient   *elasticache.Client
-	directconnectClient *directconnect.Client
-	accountID           string
-	region              string
-	cache               *ttlCache
+	ec2Client             *ec2.Client
+	rdsClient             *rds.Client
+	lambdaClient          *lambda.Client
+	elbClient             *elb.Client
+	elbv2Client           *elbv2.Client
+	apigwClient           *apigateway.Client
+	apigwv2Client         *apigatewayv2.Client
+	elasticacheClient     *elasticache.Client
+	directconnectClient   *directconnect.Client
+	networkFirewallClient *networkfirewall.Client
+	accountID             string
+	region                string
+	cache                 *ttlCache
 }
 
 func newRetryer() aws.Retryer {
@@ -53,18 +56,19 @@ func newRetryer() aws.Retryer {
 func NewClient(cfg aws.Config, accountID, region string) *Client {
 	retryer := newRetryer()
 	return &Client{
-		ec2Client:           ec2.NewFromConfig(cfg, func(o *ec2.Options) { o.Retryer = retryer }),
-		rdsClient:           rds.NewFromConfig(cfg, func(o *rds.Options) { o.Retryer = retryer }),
-		lambdaClient:        lambda.NewFromConfig(cfg, func(o *lambda.Options) { o.Retryer = retryer }),
-		elbClient:           elb.NewFromConfig(cfg, func(o *elb.Options) { o.Retryer = retryer }),
-		elbv2Client:         elbv2.NewFromConfig(cfg, func(o *elbv2.Options) { o.Retryer = retryer }),
-		apigwClient:         apigateway.NewFromConfig(cfg, func(o *apigateway.Options) { o.Retryer = retryer }),
-		apigwv2Client:       apigatewayv2.NewFromConfig(cfg, func(o *apigatewayv2.Options) { o.Retryer = retryer }),
-		elasticacheClient:   elasticache.NewFromConfig(cfg, func(o *elasticache.Options) { o.Retryer = retryer }),
-		directconnectClient: directconnect.NewFromConfig(cfg, func(o *directconnect.Options) { o.Retryer = retryer }),
-		accountID:           accountID,
-		region:              region,
-		cache:               newTTLCache(5*time.Minute, 2000),
+		ec2Client:             ec2.NewFromConfig(cfg, func(o *ec2.Options) { o.Retryer = retryer }),
+		rdsClient:             rds.NewFromConfig(cfg, func(o *rds.Options) { o.Retryer = retryer }),
+		lambdaClient:          lambda.NewFromConfig(cfg, func(o *lambda.Options) { o.Retryer = retryer }),
+		elbClient:             elb.NewFromConfig(cfg, func(o *elb.Options) { o.Retryer = retryer }),
+		elbv2Client:           elbv2.NewFromConfig(cfg, func(o *elbv2.Options) { o.Retryer = retryer }),
+		apigwClient:           apigateway.NewFromConfig(cfg, func(o *apigateway.Options) { o.Retryer = retryer }),
+		apigwv2Client:         apigatewayv2.NewFromConfig(cfg, func(o *apigatewayv2.Options) { o.Retryer = retryer }),
+		elasticacheClient:     elasticache.NewFromConfig(cfg, func(o *elasticache.Options) { o.Retryer = retryer }),
+		directconnectClient:   directconnect.NewFromConfig(cfg, func(o *directconnect.Options) { o.Retryer = retryer }),
+		networkFirewallClient: networkfirewall.NewFromConfig(cfg, func(o *networkfirewall.Options) { o.Retryer = retryer }),
+		accountID:             accountID,
+		region:                region,
+		cache:                 newTTLCache(5*time.Minute, 2000),
 	}
 }
 
@@ -1762,4 +1766,255 @@ func (c *Client) GetDirectConnectGatewayAttachments(ctx context.Context, dxgwID 
 
 	c.cache.set(key, attachments)
 	return attachments, nil
+}
+
+func (c *Client) GetNetworkFirewall(ctx context.Context, firewallID string) (*domain.NetworkFirewallData, error) {
+	key := c.cacheKey("nfw", firewallID)
+	if v, ok := c.cache.get(key); ok {
+		return v.(*domain.NetworkFirewallData), nil
+	}
+
+	out, err := c.networkFirewallClient.DescribeFirewall(ctx, &networkfirewall.DescribeFirewallInput{
+		FirewallArn: aws.String(firewallID),
+	})
+	if err != nil {
+		out, err = c.networkFirewallClient.DescribeFirewall(ctx, &networkfirewall.DescribeFirewallInput{
+			FirewallName: aws.String(firewallID),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("describe network firewall %s: %w", firewallID, err)
+		}
+	}
+
+	if out.Firewall == nil {
+		return nil, fmt.Errorf("network firewall %s not found", firewallID)
+	}
+
+	fw := out.Firewall
+	policyARN := derefString(fw.FirewallPolicyArn)
+
+	var statelessGroups []domain.StatelessRuleGroup
+	var statefulGroups []domain.StatefulRuleGroup
+	var defaultActions domain.FirewallDefaultActions
+
+	if policyARN != "" {
+		policyOut, err := c.networkFirewallClient.DescribeFirewallPolicy(ctx, &networkfirewall.DescribeFirewallPolicyInput{
+			FirewallPolicyArn: aws.String(policyARN),
+		})
+		if err == nil && policyOut.FirewallPolicy != nil {
+			policy := policyOut.FirewallPolicy
+
+			for _, action := range policy.StatelessDefaultActions {
+				defaultActions.StatelessDefaultActions = append(defaultActions.StatelessDefaultActions, action)
+			}
+			for _, action := range policy.StatelessFragmentDefaultActions {
+				defaultActions.StatelessFragmentDefaultActions = append(defaultActions.StatelessFragmentDefaultActions, action)
+			}
+			for _, action := range policy.StatefulDefaultActions {
+				defaultActions.StatefulDefaultActions = append(defaultActions.StatefulDefaultActions, string(action))
+			}
+
+			for _, ref := range policy.StatelessRuleGroupReferences {
+				group, err := c.getStatelessRuleGroup(ctx, derefString(ref.ResourceArn))
+				if err == nil {
+					group.Priority = int(derefInt32(ref.Priority))
+					statelessGroups = append(statelessGroups, group)
+				}
+			}
+
+			for _, ref := range policy.StatefulRuleGroupReferences {
+				group, err := c.getStatefulRuleGroup(ctx, derefString(ref.ResourceArn))
+				if err == nil {
+					group.Priority = int(derefInt32(ref.Priority))
+					statefulGroups = append(statefulGroups, group)
+				}
+			}
+		}
+	}
+
+	var subnetMappings []domain.FirewallSubnetMapping
+	for _, mapping := range fw.SubnetMappings {
+		subnetMappings = append(subnetMappings, domain.FirewallSubnetMapping{
+			SubnetID: derefString(mapping.SubnetId),
+		})
+	}
+
+	if out.FirewallStatus != nil {
+		for subnetID, sync := range out.FirewallStatus.SyncStates {
+			for i := range subnetMappings {
+				if subnetMappings[i].SubnetID == subnetID && sync.Attachment != nil {
+					subnetMappings[i].EndpointID = derefString(sync.Attachment.EndpointId)
+				}
+			}
+		}
+	}
+
+	data := &domain.NetworkFirewallData{
+		ID:                  derefString(fw.FirewallArn),
+		Name:                derefString(fw.FirewallName),
+		PolicyARN:           policyARN,
+		VPCID:               derefString(fw.VpcId),
+		SubnetMappings:      subnetMappings,
+		StatelessRuleGroups: statelessGroups,
+		StatefulRuleGroups:  statefulGroups,
+		DefaultActions:      defaultActions,
+	}
+
+	c.cache.set(key, data)
+	return data, nil
+}
+
+func (c *Client) getStatelessRuleGroup(ctx context.Context, arn string) (domain.StatelessRuleGroup, error) {
+	out, err := c.networkFirewallClient.DescribeRuleGroup(ctx, &networkfirewall.DescribeRuleGroupInput{
+		RuleGroupArn: aws.String(arn),
+		Type:         nfwtypes.RuleGroupTypeStateless,
+	})
+	if err != nil {
+		return domain.StatelessRuleGroup{}, fmt.Errorf("describe stateless rule group %s: %w", arn, err)
+	}
+
+	group := domain.StatelessRuleGroup{
+		ARN: arn,
+	}
+
+	if out.RuleGroup != nil && out.RuleGroup.RulesSource != nil && out.RuleGroup.RulesSource.StatelessRulesAndCustomActions != nil {
+		for _, rule := range out.RuleGroup.RulesSource.StatelessRulesAndCustomActions.StatelessRules {
+			if rule.RuleDefinition == nil {
+				continue
+			}
+
+			statelessRule := domain.StatelessRule{
+				Priority: int(derefInt32(rule.Priority)),
+				Actions:  rule.RuleDefinition.Actions,
+			}
+
+			if rule.RuleDefinition.MatchAttributes != nil {
+				attrs := rule.RuleDefinition.MatchAttributes
+
+				for _, p := range attrs.Protocols {
+					statelessRule.Match.Protocols = append(statelessRule.Match.Protocols, int(p))
+				}
+
+				for _, src := range attrs.Sources {
+					statelessRule.Match.Sources = append(statelessRule.Match.Sources, derefString(src.AddressDefinition))
+				}
+
+				for _, dst := range attrs.Destinations {
+					statelessRule.Match.Destinations = append(statelessRule.Match.Destinations, derefString(dst.AddressDefinition))
+				}
+
+				for _, pr := range attrs.SourcePorts {
+					statelessRule.Match.SourcePorts = append(statelessRule.Match.SourcePorts, domain.PortRangeSpec{
+						From: int(pr.FromPort),
+						To:   int(pr.ToPort),
+					})
+				}
+
+				for _, pr := range attrs.DestinationPorts {
+					statelessRule.Match.DestPorts = append(statelessRule.Match.DestPorts, domain.PortRangeSpec{
+						From: int(pr.FromPort),
+						To:   int(pr.ToPort),
+					})
+				}
+
+				for _, tcpFlag := range attrs.TCPFlags {
+					var flags, masks []string
+					for _, f := range tcpFlag.Flags {
+						flags = append(flags, string(f))
+					}
+					for _, m := range tcpFlag.Masks {
+						masks = append(masks, string(m))
+					}
+					statelessRule.Match.TCPFlags = append(statelessRule.Match.TCPFlags, domain.TCPFlagSpec{
+						Flags: flags,
+						Masks: masks,
+					})
+				}
+			}
+
+			group.Rules = append(group.Rules, statelessRule)
+		}
+	}
+
+	return group, nil
+}
+
+func (c *Client) getStatefulRuleGroup(ctx context.Context, arn string) (domain.StatefulRuleGroup, error) {
+	out, err := c.networkFirewallClient.DescribeRuleGroup(ctx, &networkfirewall.DescribeRuleGroupInput{
+		RuleGroupArn: aws.String(arn),
+		Type:         nfwtypes.RuleGroupTypeStateful,
+	})
+	if err != nil {
+		return domain.StatefulRuleGroup{}, fmt.Errorf("describe stateful rule group %s: %w", arn, err)
+	}
+
+	group := domain.StatefulRuleGroup{
+		ARN: arn,
+	}
+
+	if out.RuleGroupResponse != nil {
+		if out.RuleGroupResponse.Type == nfwtypes.RuleGroupTypeStateful {
+			group.RuleOrder = "DEFAULT_ACTION_ORDER"
+		}
+	}
+
+	if out.RuleGroup != nil && out.RuleGroup.RulesSource != nil {
+		if out.RuleGroup.RulesSource.StatefulRules != nil {
+			for _, rule := range out.RuleGroup.RulesSource.StatefulRules {
+				statefulRule := domain.StatefulRule{
+					Action:   string(rule.Action),
+					Protocol: string(rule.Header.Protocol),
+				}
+
+				if rule.Header != nil {
+					statefulRule.Source = derefString(rule.Header.Source)
+					statefulRule.SourcePort = derefString(rule.Header.SourcePort)
+					statefulRule.Destination = derefString(rule.Header.Destination)
+					statefulRule.DestPort = derefString(rule.Header.DestinationPort)
+					statefulRule.Direction = string(rule.Header.Direction)
+				}
+
+				for _, opt := range rule.RuleOptions {
+					if derefString(opt.Keyword) == "sid" && len(opt.Settings) > 0 {
+						statefulRule.SID = opt.Settings[0]
+					}
+				}
+
+				group.Rules = append(group.Rules, statefulRule)
+			}
+		}
+	}
+
+	return group, nil
+}
+
+func (c *Client) GetNetworkFirewallByEndpoint(ctx context.Context, endpointID string) (*domain.NetworkFirewallData, error) {
+	key := c.cacheKey("nfw-by-endpoint", endpointID)
+	if v, ok := c.cache.get(key); ok {
+		return v.(*domain.NetworkFirewallData), nil
+	}
+
+	paginator := networkfirewall.NewListFirewallsPaginator(c.networkFirewallClient, &networkfirewall.ListFirewallsInput{})
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("list network firewalls: %w", err)
+		}
+
+		for _, fw := range page.Firewalls {
+			fwData, err := c.GetNetworkFirewall(ctx, derefString(fw.FirewallArn))
+			if err != nil {
+				continue
+			}
+
+			for _, mapping := range fwData.SubnetMappings {
+				if mapping.EndpointID == endpointID {
+					c.cache.set(key, fwData)
+					return fwData, nil
+				}
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("network firewall for endpoint %s not found", endpointID)
 }
