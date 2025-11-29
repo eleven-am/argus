@@ -38,14 +38,6 @@ type RuleEvaluation = domain.RuleEvaluation
 
 type EvaluationResult = domain.EvaluationResult
 
-// Traffic flow simulation types
-
-type TrafficSpec = domain.TrafficSpec
-
-type FlowStep = domain.FlowStep
-
-type FlowResult = domain.FlowResult
-
 type resourceType int
 
 const (
