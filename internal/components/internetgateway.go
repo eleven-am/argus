@@ -31,6 +31,33 @@ func (igw *InternetGateway) GetNextHops(dest domain.RoutingTarget, analyzerCtx d
 			Reason:      "internet gateway outbound requires external destination",
 		}
 	}
+	if analyzerCtx == nil || analyzerCtx.GetAccountContext() == nil {
+		return nil, &domain.BlockingError{
+			ComponentID: igw.GetID(),
+			Reason:      "internet gateway requires analyzer context for VPC validation",
+		}
+	}
+	client, err := analyzerCtx.GetAccountContext().GetClient(igw.accountID)
+	if err != nil {
+		return nil, err
+	}
+	if igw.data.VPCID == "" {
+		return nil, &domain.BlockingError{
+			ComponentID: igw.GetID(),
+			Reason:      "internet gateway missing VPC attachment",
+		}
+	}
+	ctx := analyzerCtx.Context()
+	vpc, err := client.GetVPC(ctx, igw.data.VPCID)
+	if err != nil {
+		return nil, err
+	}
+	if vpc.CIDRBlock != "" && !IPMatchesCIDR(dest.IP, vpc.CIDRBlock) && (vpc.IPv6CIDRBlock == "" || !IPMatchesCIDR(dest.IP, vpc.IPv6CIDRBlock)) && dest.Direction == "inbound" {
+		return nil, &domain.BlockingError{
+			ComponentID: igw.GetID(),
+			Reason:      fmt.Sprintf("destination %s not within attached VPC %s", dest.IP, vpc.ID),
+		}
+	}
 	return []domain.Component{NewIPTarget(&domain.IPTargetData{IP: dest.IP, Port: dest.Port}, igw.accountID)}, nil
 }
 

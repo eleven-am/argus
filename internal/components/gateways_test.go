@@ -13,8 +13,14 @@ func TestInternetGateway_GetNextHops_ExternalDestination(t *testing.T) {
 		VPCID: "vpc-123",
 	}, "111111111111")
 
-	dest := domain.RoutingTarget{IP: "8.8.8.8", Port: 443, Protocol: "tcp"}
-	hops, err := igw.GetNextHops(dest, nil)
+	client := newMockAWSClient()
+	client.vpcs["vpc-123"] = &domain.VPCData{ID: "vpc-123", CIDRBlock: "10.0.0.0/16"}
+	accountCtx := newMockAccountContext()
+	accountCtx.addClient("111111111111", client)
+	analyzerCtx := newMockAnalyzerContext(accountCtx)
+
+	dest := domain.RoutingTarget{IP: "8.8.8.8", Port: 443, Protocol: "tcp", Direction: "outbound", SourceIsPrivate: true}
+	hops, err := igw.GetNextHops(dest, analyzerCtx)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -71,6 +77,29 @@ func TestInternetGateway_GetAccountID(t *testing.T) {
 
 	if igw.GetAccountID() != "222222222222" {
 		t.Errorf("unexpected account ID: %s", igw.GetAccountID())
+	}
+}
+
+func TestInternetGateway_RequiresContextAndVPC(t *testing.T) {
+	igw := NewInternetGateway(&domain.InternetGatewayData{ID: "igw-1", VPCID: "vpc-1"}, "111111111111")
+	_, err := igw.GetNextHops(domain.RoutingTarget{IP: "8.8.8.8", Port: 443, Protocol: "tcp", Direction: "outbound", SourceIsPrivate: true}, nil)
+	if err == nil {
+		t.Fatalf("expected error without analyzer context")
+	}
+
+	accountCtx := newMockAccountContext()
+	analyzerCtx := newMockAnalyzerContext(accountCtx)
+	_, err = igw.GetNextHops(domain.RoutingTarget{IP: "8.8.8.8", Port: 443, Protocol: "tcp", Direction: "outbound", SourceIsPrivate: true}, analyzerCtx)
+	if err == nil {
+		t.Fatalf("expected error due to missing VPC data in client")
+	}
+
+	client := newMockAWSClient()
+	client.vpcs["vpc-1"] = &domain.VPCData{ID: "vpc-1", CIDRBlock: "10.0.0.0/16"}
+	accountCtx.addClient("111111111111", client)
+	_, err = igw.GetNextHops(domain.RoutingTarget{IP: "8.8.8.8", Port: 443, Protocol: "tcp", Direction: "outbound", SourceIsPrivate: true}, analyzerCtx)
+	if err != nil {
+		t.Fatalf("unexpected error after VPC provided: %v", err)
 	}
 }
 

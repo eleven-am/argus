@@ -92,7 +92,8 @@ func NewTransitGateway(data *domain.TransitGatewayData, accountID, ingressAttach
 func (tgw *TransitGateway) GetNextHops(dest domain.RoutingTarget, analyzerCtx domain.AnalyzerContext) ([]domain.Component, error) {
 	allowedRTIDs := tgw.getAllowedRouteTables()
 
-	matchedRoute, matchedAttachment := tgw.findBestRoute(dest, allowedRTIDs, analyzerCtx)
+	prefixCache := make(map[string]int)
+	matchedRoute, matchedAttachment := tgw.findBestRoute(dest, allowedRTIDs, analyzerCtx, prefixCache)
 
 	if matchedRoute == nil || matchedAttachment == nil {
 		return nil, &domain.BlockingError{
@@ -137,7 +138,7 @@ func (tgw *TransitGateway) getAllowedRouteTables() map[string]bool {
 	return allowed
 }
 
-func (tgw *TransitGateway) findBestRoute(dest domain.RoutingTarget, allowedRTIDs map[string]bool, analyzerCtx domain.AnalyzerContext) (*domain.TGWRoute, *domain.TGWRouteAttachment) {
+func (tgw *TransitGateway) findBestRoute(dest domain.RoutingTarget, allowedRTIDs map[string]bool, analyzerCtx domain.AnalyzerContext, prefixCache map[string]int) (*domain.TGWRoute, *domain.TGWRouteAttachment) {
 	var bestRoute *domain.TGWRoute
 	var bestAttachment *domain.TGWRouteAttachment
 	longestPrefix := -1
@@ -160,7 +161,7 @@ func (tgw *TransitGateway) findBestRoute(dest domain.RoutingTarget, allowedRTIDs
 			if route.DestinationCIDR != "" && IPMatchesCIDR(dest.IP, route.DestinationCIDR) {
 				matchPrefix = route.PrefixLength
 			} else if route.DestinationPrefixListID != "" {
-				matchPrefix = tgw.matchPrefixList(dest.IP, route.DestinationPrefixListID, analyzerCtx)
+				matchPrefix = tgw.matchPrefixList(dest.IP, route.DestinationPrefixListID, analyzerCtx, prefixCache)
 			}
 
 			if matchPrefix <= longestPrefix || matchPrefix < 0 {
@@ -181,7 +182,10 @@ func (tgw *TransitGateway) findBestRoute(dest domain.RoutingTarget, allowedRTIDs
 	return bestRoute, bestAttachment
 }
 
-func (tgw *TransitGateway) matchPrefixList(ip, plID string, analyzerCtx domain.AnalyzerContext) int {
+func (tgw *TransitGateway) matchPrefixList(ip, plID string, analyzerCtx domain.AnalyzerContext, prefixCache map[string]int) int {
+	if val, ok := prefixCache[plID+":"+ip]; ok {
+		return val
+	}
 	if analyzerCtx == nil || analyzerCtx.GetAccountContext() == nil {
 		return -1
 	}
@@ -191,6 +195,7 @@ func (tgw *TransitGateway) matchPrefixList(ip, plID string, analyzerCtx domain.A
 	}
 	pl, err := client.GetManagedPrefixList(analyzerCtx.Context(), plID)
 	if err != nil {
+		prefixCache[plID+":"+ip] = -1
 		return -1
 	}
 
@@ -203,6 +208,7 @@ func (tgw *TransitGateway) matchPrefixList(ip, plID string, analyzerCtx domain.A
 			}
 		}
 	}
+	prefixCache[plID+":"+ip] = longest
 	return longest
 }
 

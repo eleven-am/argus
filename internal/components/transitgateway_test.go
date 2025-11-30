@@ -19,6 +19,53 @@ func TestTransitGateway_AttachmentAwareRouting(t *testing.T) {
 		wantComponentType   string
 	}{
 		{
+			name: "matches prefix list destination",
+			tgwData: &domain.TransitGatewayData{
+				ID:      "tgw-123",
+				OwnerID: "111111111111",
+				RouteTables: []domain.TGWRouteTableData{
+					{
+						ID: "tgw-rtb-1",
+						Associations: []domain.TGWRouteTableAssociation{
+							{AttachmentID: "tgw-attach-ingress", ResourceType: "vpc", State: "associated"},
+						},
+						Routes: []domain.TGWRoute{
+							{
+								DestinationPrefixListID: "pl-123",
+								PrefixLength:            24,
+								State:                   "active",
+								Attachments: []domain.TGWRouteAttachment{
+									{ID: "tgw-attach-target", Type: "vpc", ResourceID: "vpc-target", OwnerID: "111111111111", State: "available"},
+								},
+							},
+						},
+					},
+				},
+			},
+			ingressAttachmentID: "tgw-attach-ingress",
+			dest:                domain.RoutingTarget{IP: "10.10.1.5", Port: 443, Protocol: "tcp"},
+			setupMock: func(ctx *mockAccountContext) {
+				client := newMockAWSClient()
+				client.prefixLists["pl-123"] = &domain.ManagedPrefixListData{
+					ID:   "pl-123",
+					Name: "test-pl",
+					Entries: []domain.PrefixListEntry{
+						{CIDR: "10.10.1.0/24"},
+					},
+				}
+				client.tgwAttachments["tgw-attach-target"] = &domain.TGWAttachmentData{
+					ID:               "tgw-attach-target",
+					TransitGatewayID: "tgw-123",
+					VPCID:            "vpc-target",
+					SubnetIDs:        []string{"subnet-1"},
+					State:            "available",
+				}
+				ctx.addClient("111111111111", client)
+			},
+			wantErr:           false,
+			wantComponentType: "*components.TransitGatewayVPCAttachmentInbound",
+		},
+		{
 			name: "routes via associated route table",
 			tgwData: &domain.TransitGatewayData{
 				ID:      "tgw-123",
