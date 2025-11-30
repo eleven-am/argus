@@ -438,18 +438,15 @@ func TestNLB_GetNextHops_SecurityGroupBlocks(t *testing.T) {
 		TargetGroupARNs: []string{"arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/tg-1/abc123"},
 	}, "123456789012")
 
-	_, err := nlb.GetNextHops(domain.RoutingTarget{IP: "10.0.1.100", Port: 80}, analyzerCtx)
-
-	if err == nil {
-		t.Fatal("expected error when SG blocks traffic")
+	hops, err := nlb.GetNextHops(domain.RoutingTarget{IP: "10.0.1.100", Port: 80}, analyzerCtx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	var blockingErr *domain.BlockingError
-	ok := errors.As(err, &blockingErr)
-	if !ok {
-		t.Fatalf("expected BlockingError, got %T", err)
+	if len(hops) != 1 {
+		t.Fatalf("expected SG chain head, got %d", len(hops))
 	}
-	if blockingErr.ComponentID == "" {
-		t.Error("expected non-empty component ID")
+	if _, ok := hops[0].(*SecurityGroup); !ok {
+		t.Fatalf("expected SecurityGroup, got %T", hops[0])
 	}
 }
 
@@ -530,10 +527,10 @@ func TestALB_GetNextHops_SecurityGroupsEvaluatedThenTargetGroups(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(hops) != 1 {
-		t.Errorf("expected 1 hop (TG only, SGs evaluated internally), got %d", len(hops))
+		t.Errorf("expected SG-wrapped TG chain head, got %d", len(hops))
 	}
-	if _, ok := hops[0].(*TargetGroup); !ok {
-		t.Errorf("expected TargetGroup component, got %T", hops[0])
+	if _, ok := hops[0].(*SecurityGroup); !ok {
+		t.Errorf("expected SecurityGroup head, got %T", hops[0])
 	}
 }
 
@@ -572,18 +569,16 @@ func TestALB_GetNextHops_SecurityGroupBlocks(t *testing.T) {
 		TargetGroupARNs: []string{"arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/tg-1/abc123"},
 	}, "123456789012")
 
-	_, err := alb.GetNextHops(domain.RoutingTarget{IP: "10.0.1.100", Port: 80}, analyzerCtx)
+	hops, err := alb.GetNextHops(domain.RoutingTarget{IP: "10.0.1.100", Port: 80}, analyzerCtx)
 
-	if err == nil {
-		t.Fatal("expected error when SG blocks traffic")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	var blockingErr *domain.BlockingError
-	ok := errors.As(err, &blockingErr)
-	if !ok {
-		t.Fatalf("expected BlockingError, got %T", err)
+	if len(hops) != 1 {
+		t.Fatalf("expected SG chain head, got %d", len(hops))
 	}
-	if blockingErr.ComponentID == "" {
-		t.Error("expected non-empty component ID")
+	if _, ok := hops[0].(*SecurityGroup); !ok {
+		t.Fatalf("expected SecurityGroup, got %T", hops[0])
 	}
 }
 
@@ -629,12 +624,12 @@ func TestCLB_GetNextHops_SecurityGroupsEvaluatedThenInstances(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(hops) != 2 {
-		t.Errorf("expected 2 hops (instances only, SGs evaluated internally), got %d", len(hops))
+		t.Errorf("expected SG heads per instance, got %d", len(hops))
 	}
 
 	for _, hop := range hops {
-		if _, ok := hop.(*EC2Instance); !ok {
-			t.Errorf("expected EC2Instance component, got %T", hop)
+		if _, ok := hop.(*SecurityGroup); !ok {
+			t.Errorf("expected SecurityGroup head, got %T", hop)
 		}
 	}
 }
@@ -669,18 +664,16 @@ func TestCLB_GetNextHops_SecurityGroupBlocks(t *testing.T) {
 		InstanceIDs:    []string{"i-clb-1"},
 	}, "123456789012")
 
-	_, err := clb.GetNextHops(domain.RoutingTarget{IP: "10.0.1.10", Port: 80}, analyzerCtx)
+	hops, err := clb.GetNextHops(domain.RoutingTarget{IP: "10.0.1.10", Port: 80}, analyzerCtx)
 
-	if err == nil {
-		t.Fatal("expected error when SG blocks traffic")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	var blockingErr *domain.BlockingError
-	ok := errors.As(err, &blockingErr)
-	if !ok {
-		t.Fatalf("expected BlockingError, got %T", err)
+	if len(hops) == 0 {
+		t.Fatal("expected SG chain head")
 	}
-	if blockingErr.ComponentID == "" {
-		t.Error("expected non-empty component ID")
+	if _, ok := hops[0].(*SecurityGroup); !ok {
+		t.Fatalf("expected SecurityGroup, got %T", hops[0])
 	}
 }
 

@@ -34,25 +34,30 @@ func (l *LambdaFunction) GetNextHops(dest domain.RoutingTarget, analyzerCtx doma
 	}
 
 	ctx := analyzerCtx.Context()
-	var components []domain.Component
 
-	for _, sgID := range l.data.SecurityGroups {
-		sgData, err := client.GetSecurityGroup(ctx, sgID)
+	if len(l.data.SubnetIDs) == 0 {
+		return nil, &domain.BlockingError{
+			ComponentID: l.GetID(),
+			Reason:      "Lambda function missing subnet data",
+		}
+	}
+
+	subnetData, err := client.GetSubnet(ctx, l.data.SubnetIDs[0])
+	if err != nil {
+		return nil, err
+	}
+
+	var next domain.Component = NewSubnet(subnetData, l.accountID)
+
+	for i := len(l.data.SecurityGroups) - 1; i >= 0; i-- {
+		sgData, err := client.GetSecurityGroup(ctx, l.data.SecurityGroups[i])
 		if err != nil {
 			return nil, err
 		}
-		components = append(components, NewSecurityGroup(sgData, l.accountID))
+		next = NewSecurityGroupWithNext(sgData, l.accountID, next)
 	}
 
-	if len(l.data.SubnetIDs) > 0 {
-		subnetData, err := client.GetSubnet(ctx, l.data.SubnetIDs[0])
-		if err != nil {
-			return nil, err
-		}
-		components = append(components, NewSubnet(subnetData, l.accountID))
-	}
-
-	return components, nil
+	return []domain.Component{next}, nil
 }
 
 func (l *LambdaFunction) GetRoutingTarget() domain.RoutingTarget {

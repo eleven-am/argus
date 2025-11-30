@@ -190,9 +190,10 @@ func (c *Client) searchTGWRoutes(ctx context.Context, rtID string) ([]domain.TGW
 
 	for _, r := range out.Routes {
 		route := domain.TGWRoute{
-			DestinationCIDR: derefString(r.DestinationCidrBlock),
-			PrefixLength:    prefixLength(derefString(r.DestinationCidrBlock)),
-			State:           string(r.State),
+			DestinationCIDR:         derefString(r.DestinationCidrBlock),
+			DestinationPrefixListID: derefString(r.PrefixListId),
+			PrefixLength:            prefixLength(derefString(r.DestinationCidrBlock)),
+			State:                   string(r.State),
 		}
 
 		for _, att := range r.TransitGatewayAttachments {

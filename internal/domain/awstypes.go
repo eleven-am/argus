@@ -75,10 +75,11 @@ type TGWRouteAttachment struct {
 }
 
 type TGWRoute struct {
-	DestinationCIDR string
-	PrefixLength    int
-	State           string
-	Attachments     []TGWRouteAttachment
+	DestinationCIDR         string
+	DestinationPrefixListID string
+	PrefixLength            int
+	State                   string
+	Attachments             []TGWRouteAttachment
 }
 
 type TGWRouteTableAssociation struct {

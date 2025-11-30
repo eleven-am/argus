@@ -25,25 +25,30 @@ func (e *EKSPod) GetNextHops(dest domain.RoutingTarget, analyzerCtx domain.Analy
 	}
 
 	ctx := analyzerCtx.Context()
-	var components []domain.Component
 
-	for _, sgID := range e.data.SecurityGroups {
-		sgData, err := client.GetSecurityGroup(ctx, sgID)
+	if e.data.SubnetID == "" {
+		return nil, &domain.BlockingError{
+			ComponentID: e.GetID(),
+			Reason:      "EKS pod missing subnet data",
+		}
+	}
+
+	subnetData, err := client.GetSubnet(ctx, e.data.SubnetID)
+	if err != nil {
+		return nil, err
+	}
+
+	var next domain.Component = NewSubnet(subnetData, e.accountID)
+
+	for i := len(e.data.SecurityGroups) - 1; i >= 0; i-- {
+		sgData, err := client.GetSecurityGroup(ctx, e.data.SecurityGroups[i])
 		if err != nil {
 			return nil, err
 		}
-		components = append(components, NewSecurityGroup(sgData, e.accountID))
+		next = NewSecurityGroupWithNext(sgData, e.accountID, next)
 	}
 
-	if e.data.SubnetID != "" {
-		subnetData, err := client.GetSubnet(ctx, e.data.SubnetID)
-		if err != nil {
-			return nil, err
-		}
-		components = append(components, NewSubnet(subnetData, e.accountID))
-	}
-
-	return components, nil
+	return []domain.Component{next}, nil
 }
 
 func (e *EKSPod) GetRoutingTarget() domain.RoutingTarget {

@@ -25,25 +25,30 @@ func (r *RDSInstance) GetNextHops(dest domain.RoutingTarget, analyzerCtx domain.
 	}
 
 	ctx := analyzerCtx.Context()
-	var components []domain.Component
 
-	for _, sgID := range r.data.SecurityGroups {
-		sgData, err := client.GetSecurityGroup(ctx, sgID)
+	if len(r.data.SubnetIDs) == 0 {
+		return nil, &domain.BlockingError{
+			ComponentID: r.GetID(),
+			Reason:      "RDS instance missing subnet data",
+		}
+	}
+
+	subnetData, err := client.GetSubnet(ctx, r.data.SubnetIDs[0])
+	if err != nil {
+		return nil, err
+	}
+
+	var next domain.Component = NewSubnet(subnetData, r.accountID)
+
+	for i := len(r.data.SecurityGroups) - 1; i >= 0; i-- {
+		sgData, err := client.GetSecurityGroup(ctx, r.data.SecurityGroups[i])
 		if err != nil {
 			return nil, err
 		}
-		components = append(components, NewSecurityGroup(sgData, r.accountID))
+		next = NewSecurityGroupWithNext(sgData, r.accountID, next)
 	}
 
-	if len(r.data.SubnetIDs) > 0 {
-		subnetData, err := client.GetSubnet(ctx, r.data.SubnetIDs[0])
-		if err != nil {
-			return nil, err
-		}
-		components = append(components, NewSubnet(subnetData, r.accountID))
-	}
-
-	return components, nil
+	return []domain.Component{next}, nil
 }
 
 func (r *RDSInstance) GetRoutingTarget() domain.RoutingTarget {

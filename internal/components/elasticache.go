@@ -25,25 +25,30 @@ func (e *ElastiCacheCluster) GetNextHops(dest domain.RoutingTarget, analyzerCtx 
 	}
 
 	ctx := analyzerCtx.Context()
-	var components []domain.Component
 
-	for _, sgID := range e.data.SecurityGroups {
-		sgData, err := client.GetSecurityGroup(ctx, sgID)
+	if len(e.data.SubnetIDs) == 0 {
+		return nil, &domain.BlockingError{
+			ComponentID: e.GetID(),
+			Reason:      "ElastiCache cluster missing subnet data",
+		}
+	}
+
+	subnetData, err := client.GetSubnet(ctx, e.data.SubnetIDs[0])
+	if err != nil {
+		return nil, err
+	}
+
+	var next domain.Component = NewSubnet(subnetData, e.accountID)
+
+	for i := len(e.data.SecurityGroups) - 1; i >= 0; i-- {
+		sgData, err := client.GetSecurityGroup(ctx, e.data.SecurityGroups[i])
 		if err != nil {
 			return nil, err
 		}
-		components = append(components, NewSecurityGroup(sgData, e.accountID))
+		next = NewSecurityGroupWithNext(sgData, e.accountID, next)
 	}
 
-	if len(e.data.SubnetIDs) > 0 {
-		subnetData, err := client.GetSubnet(ctx, e.data.SubnetIDs[0])
-		if err != nil {
-			return nil, err
-		}
-		components = append(components, NewSubnet(subnetData, e.accountID))
-	}
-
-	return components, nil
+	return []domain.Component{next}, nil
 }
 
 func (e *ElastiCacheCluster) GetRoutingTarget() domain.RoutingTarget {

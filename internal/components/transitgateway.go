@@ -92,7 +92,7 @@ func NewTransitGateway(data *domain.TransitGatewayData, accountID, ingressAttach
 func (tgw *TransitGateway) GetNextHops(dest domain.RoutingTarget, analyzerCtx domain.AnalyzerContext) ([]domain.Component, error) {
 	allowedRTIDs := tgw.getAllowedRouteTables()
 
-	matchedRoute, matchedAttachment := tgw.findBestRoute(dest, allowedRTIDs)
+	matchedRoute, matchedAttachment := tgw.findBestRoute(dest, allowedRTIDs, analyzerCtx)
 
 	if matchedRoute == nil || matchedAttachment == nil {
 		return nil, &domain.BlockingError{
@@ -137,7 +137,7 @@ func (tgw *TransitGateway) getAllowedRouteTables() map[string]bool {
 	return allowed
 }
 
-func (tgw *TransitGateway) findBestRoute(dest domain.RoutingTarget, allowedRTIDs map[string]bool) (*domain.TGWRoute, *domain.TGWRouteAttachment) {
+func (tgw *TransitGateway) findBestRoute(dest domain.RoutingTarget, allowedRTIDs map[string]bool, analyzerCtx domain.AnalyzerContext) (*domain.TGWRoute, *domain.TGWRouteAttachment) {
 	var bestRoute *domain.TGWRoute
 	var bestAttachment *domain.TGWRouteAttachment
 	longestPrefix := -1
@@ -156,11 +156,14 @@ func (tgw *TransitGateway) findBestRoute(dest domain.RoutingTarget, allowedRTIDs
 				continue
 			}
 
-			if !IPMatchesCIDR(dest.IP, route.DestinationCIDR) {
-				continue
+			matchPrefix := -1
+			if route.DestinationCIDR != "" && IPMatchesCIDR(dest.IP, route.DestinationCIDR) {
+				matchPrefix = route.PrefixLength
+			} else if route.DestinationPrefixListID != "" {
+				matchPrefix = tgw.matchPrefixList(dest.IP, route.DestinationPrefixListID, analyzerCtx)
 			}
 
-			if route.PrefixLength <= longestPrefix {
+			if matchPrefix <= longestPrefix || matchPrefix < 0 {
 				continue
 			}
 
@@ -171,11 +174,36 @@ func (tgw *TransitGateway) findBestRoute(dest domain.RoutingTarget, allowedRTIDs
 
 			bestRoute = route
 			bestAttachment = attachment
-			longestPrefix = route.PrefixLength
+			longestPrefix = matchPrefix
 		}
 	}
 
 	return bestRoute, bestAttachment
+}
+
+func (tgw *TransitGateway) matchPrefixList(ip, plID string, analyzerCtx domain.AnalyzerContext) int {
+	if analyzerCtx == nil || analyzerCtx.GetAccountContext() == nil {
+		return -1
+	}
+	client, err := analyzerCtx.GetAccountContext().GetClient(tgw.accountID)
+	if err != nil {
+		return -1
+	}
+	pl, err := client.GetManagedPrefixList(analyzerCtx.Context(), plID)
+	if err != nil {
+		return -1
+	}
+
+	longest := -1
+	for _, entry := range pl.Entries {
+		if IPMatchesCIDR(ip, entry.CIDR) {
+			p := getPrefixLength(entry.CIDR)
+			if p > longest {
+				longest = p
+			}
+		}
+	}
+	return longest
 }
 
 func (tgw *TransitGateway) selectActiveAttachment(route *domain.TGWRoute) *domain.TGWRouteAttachment {

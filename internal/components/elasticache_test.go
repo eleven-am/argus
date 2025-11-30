@@ -117,7 +117,7 @@ func TestElastiCacheCluster_GetNextHops(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(hops) != 2 {
-		t.Errorf("expected 2 hops (SG + Subnet), got %d", len(hops))
+	if len(hops) != 1 {
+		t.Errorf("expected single chained hop head, got %d", len(hops))
 	}
 }

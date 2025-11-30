@@ -38,7 +38,25 @@ func (nat *NATGateway) GetNextHops(dest domain.RoutingTarget, analyzerCtx domain
 			Reason:      "NAT gateway expects private source IP for outbound traffic",
 		}
 	}
-	return []domain.Component{NewIPTarget(&domain.IPTargetData{IP: dest.IP, Port: dest.Port}, nat.accountID)}, nil
+	client, err := analyzerCtx.GetAccountContext().GetClient(nat.accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := analyzerCtx.Context()
+	if nat.data.SubnetID == "" {
+		return nil, &domain.BlockingError{
+			ComponentID: nat.GetID(),
+			Reason:      "NAT gateway missing subnet data",
+		}
+	}
+
+	subnetData, err := client.GetSubnet(ctx, nat.data.SubnetID)
+	if err != nil {
+		return nil, err
+	}
+
+	return []domain.Component{NewSubnet(subnetData, nat.accountID)}, nil
 }
 
 func (nat *NATGateway) GetRoutingTarget() domain.RoutingTarget {
@@ -51,10 +69,6 @@ func (nat *NATGateway) GetID() string {
 
 func (nat *NATGateway) GetAccountID() string {
 	return nat.accountID
-}
-
-func (nat *NATGateway) IsTerminal() bool {
-	return true
 }
 
 func (nat *NATGateway) GetComponentType() string {

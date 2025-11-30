@@ -201,8 +201,8 @@ func TestRDSInstance_GetNextHops(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(hops) != 2 {
-		t.Errorf("expected 2 hops (1 SG + 1 subnet), got %d", len(hops))
+	if len(hops) != 1 {
+		t.Errorf("expected chained SG/subnet head, got %d", len(hops))
 	}
 }
 
@@ -264,13 +264,10 @@ func TestRDSInstance_GetNextHops_NoSubnets(t *testing.T) {
 	}, "111111111111")
 
 	dest := domain.RoutingTarget{IP: "10.0.3.100", Port: 443, Protocol: "tcp"}
-	hops, err := rds.GetNextHops(dest, analyzerCtx)
+	_, err := rds.GetNextHops(dest, analyzerCtx)
 
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(hops) != 0 {
-		t.Errorf("expected 0 hops with no subnets, got %d", len(hops))
+	if err == nil {
+		t.Fatal("expected error due to missing subnet data")
 	}
 }
 
@@ -341,8 +338,8 @@ func TestLambdaFunction_GetNextHops_VPCAttached(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(hops) != 2 {
-		t.Errorf("expected 2 hops (1 SG + 1 subnet), got %d", len(hops))
+	if len(hops) != 1 {
+		t.Errorf("expected chained SG/subnet head, got %d", len(hops))
 	}
 }
 

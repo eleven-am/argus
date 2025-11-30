@@ -26,35 +26,42 @@ func (alb *ALB) GetNextHops(dest domain.RoutingTarget, analyzerCtx domain.Analyz
 
 	ctx := analyzerCtx.Context()
 
+	var sgDatas []*domain.SecurityGroupData
 	for _, sgID := range alb.data.SecurityGroups {
 		sgData, err := client.GetSecurityGroup(ctx, sgID)
 		if err != nil {
 			return nil, err
 		}
-		sg := NewSecurityGroup(sgData, alb.accountID)
-		_, err = sg.GetNextHops(dest, analyzerCtx)
-		if err != nil {
-			return nil, &domain.BlockingError{
-				ComponentID: alb.GetID(),
-				Reason:      fmt.Sprintf("ALB security group %s blocked: %v", sgID, err),
-			}
-		}
+		sgDatas = append(sgDatas, sgData)
 	}
 
-	var components []domain.Component
+	var targets []domain.Component
 	for _, tgARN := range alb.data.TargetGroupARNs {
 		tgData, err := client.GetTargetGroup(ctx, tgARN)
 		if err != nil {
 			return nil, err
 		}
-		components = append(components, NewTargetGroup(tgData, alb.accountID))
+		targets = append(targets, NewTargetGroup(tgData, alb.accountID))
 	}
 
-	if len(components) == 0 {
+	if len(targets) == 0 {
 		return nil, &domain.BlockingError{
 			ComponentID: alb.GetID(),
 			Reason:      "no target groups configured for ALB",
 		}
+	}
+
+	if len(sgDatas) == 0 {
+		return targets, nil
+	}
+
+	var components []domain.Component
+	for _, target := range targets {
+		var next domain.Component = target
+		for i := len(sgDatas) - 1; i >= 0; i-- {
+			next = NewSecurityGroupWithNext(sgDatas[i], alb.accountID, next)
+		}
+		components = append(components, next)
 	}
 
 	return components, nil

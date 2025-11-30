@@ -75,29 +75,52 @@ func TestInternetGateway_GetAccountID(t *testing.T) {
 }
 
 func TestNATGateway_GetNextHops_ExternalDestination(t *testing.T) {
+	client := newMockAWSClient()
+	client.subnets["subnet-123"] = &domain.SubnetData{
+		ID:           "subnet-123",
+		VPCID:        "vpc-1",
+		NaclID:       "nacl-1",
+		RouteTableID: "rtb-1",
+	}
+	client.nacls["nacl-1"] = &domain.NACLData{
+		ID: "nacl-1",
+		OutboundRules: []domain.NACLRule{
+			{RuleNumber: 100, Protocol: "tcp", FromPort: 0, ToPort: 65535, CIDRBlock: "0.0.0.0/0", Action: "allow"},
+		},
+		InboundRules: []domain.NACLRule{
+			{RuleNumber: 100, Protocol: "tcp", FromPort: 0, ToPort: 65535, CIDRBlock: "0.0.0.0/0", Action: "allow"},
+		},
+	}
+	client.routeTables["rtb-1"] = &domain.RouteTableData{
+		ID: "rtb-1",
+		Routes: []domain.Route{
+			{DestinationCIDR: "0.0.0.0/0", PrefixLength: 0, TargetType: "internet-gateway", TargetID: "igw-1"},
+		},
+	}
+	client.igws["igw-1"] = &domain.InternetGatewayData{ID: "igw-1"}
+
+	accountCtx := newMockAccountContext()
+	accountCtx.addClient("111111111111", client)
+	analyzerCtx := newMockAnalyzerContext(accountCtx)
+
 	nat := NewNATGateway(&domain.NATGatewayData{
 		ID:       "nat-123",
 		SubnetID: "subnet-123",
 	}, "111111111111")
 
 	dest := domain.RoutingTarget{IP: "8.8.8.8", Port: 443, Protocol: "tcp"}
-	hops, err := nat.GetNextHops(dest, nil)
+	hops, err := nat.GetNextHops(dest, analyzerCtx)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
 	if len(hops) != 1 {
-		t.Fatalf("NAT should return IPTarget for external destination, got %d hops", len(hops))
+		t.Fatalf("NAT should return chained subnet entry point, got %d hops", len(hops))
 	}
 
-	ipTarget, ok := hops[0].(*IPTarget)
-	if !ok {
-		t.Fatalf("expected IPTarget, got %T", hops[0])
-	}
-
-	if ipTarget.GetRoutingTarget().IP != dest.IP {
-		t.Errorf("expected IP %s, got %s", dest.IP, ipTarget.GetRoutingTarget().IP)
+	if _, ok := hops[0].(*Subnet); !ok {
+		t.Fatalf("expected Subnet hop, got %T", hops[0])
 	}
 }
 

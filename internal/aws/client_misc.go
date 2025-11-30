@@ -140,18 +140,10 @@ func (c *Client) GetDirectConnectGatewayAttachments(ctx context.Context, dxgwID 
 
 	var attachments []domain.TGWAttachmentData
 	for _, att := range out.DirectConnectGatewayAttachments {
-		if att.VirtualInterfaceId != nil {
-			continue
-		}
-
-		tgwID := ""
-		if att.VirtualInterfaceOwnerAccount != nil {
-			tgwID = derefString(att.VirtualInterfaceOwnerAccount)
-		}
-
 		attachments = append(attachments, domain.TGWAttachmentData{
 			ID:               derefString(att.VirtualInterfaceId),
-			TransitGatewayID: tgwID,
+			TransitGatewayID: "",
+			TGWAccountID:     derefString(att.VirtualInterfaceOwnerAccount),
 			State:            string(att.AttachmentState),
 		})
 	}
